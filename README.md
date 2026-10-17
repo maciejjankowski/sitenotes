@@ -1,6 +1,14 @@
 # Site Notes - notes on web page elements, for the AI agent that fixes them
 
-Krug pass, GIFs, council and Astra verdicts of 2026-10-17: `docs/2026-10-17/` (showcase at http://localhost:18080/site-notes/).
+**Live, with a test drive on the page itself: https://sitenotes.maciejjankowski.com/**
+
+Mark everything on the live page, the agent fixes it in one pass, you keep or revert each change where it happened.
+
+![Adding notes: click the element, type, Enter, next](docs/2026-10-17/gif/batch.gif)
+
+![Checking the agent's changes: green ticks, Keep or Revert on the element](docs/2026-10-17/gif/review.gif)
+
+Krug pass of 2026-10-17 (18 friction points found and fixed): `docs/2026-10-17/roast.md`.
 
 Click an element, say what should change (or press Remove element), and the agent gets every note of a site,
 grouped by page, with the CSS selector, element HTML/text, the YAML source (`data-src`) and, from the extension, a screenshot.
@@ -9,7 +17,7 @@ One file, `extension/content.js`, runs two ways:
 
 | | Who | Where | Notes go to |
 |---|---|---|---|
-| **Extension** (`extension/`) | MJ | any site | the site's own hub if it has one, else the QA hub http://localhost:18080/annot/ |
+| **Extension** (`extension/`) | MJ | any site | the site's own hub if it has one, else your local hub (URL set by `install.sh`) |
 | **Script on the site** (`/notes/notes.js`) | anyone with the site's secret link (a client) | sites with `/notes/` | the site's own hub `https://SITE/notes/` |
 
 Sites with their own hub are listed in `.secrets/sites/*.env` (git-ignored). The old `annotator.js` drop-in is retired: the file on those sites is
@@ -34,7 +42,7 @@ next to each web root (`domains/SITE/annotations_backup_2026-10-07/`).
 
 ### Setup (once)
 1. `./install.sh` writes the key into `.secrets/hub.env`, `hub/secret.php` and `extension/defaults.js` (all git-ignored)
-   and links `hub/` to the QA server: http://localhost:18080/annot/
+   and links `hub/` to your local web server (the hub URL you pass to `install.sh`; a local Apache/PHP works)
 2. Chrome (or Brave, Opera, Edge): `chrome://extensions` > Developer mode > **Load unpacked** > `~/code/annotator/extension`.
    Chrome warns "read and change all your data on all websites": the extension needs that to keep note mode on
    while you move between pages and to take the screenshot. It does nothing until you click its icon.
@@ -112,10 +120,10 @@ bin/annot -s SITE accept ID                # same as Keep on the green marker
 bin/annot -s SITE revert ID "why"          # same as Revert; shows as REVERT in the export
 bin/annot move SITE                        # local hub -> the site's own hub (screenshots included)
 ```
-SITE is the host as in the address bar, with the port if any (`example.com`, `localhost:18080`).
+SITE is the host as in the address bar, with the port if any (`example.com`, `127.0.0.1:8080`).
 `annot` picks the site's own hub when `.secrets/sites/SITE.env` exists, else the QA hub.
 Screenshot paths in the export are local files (`hub/data/shots/ID.jpg`), readable directly.
-Overview with screenshots and a **Not fixed** button for checking the agent's fixes: http://localhost:18080/annot/
+Overview with screenshots and a **Not fixed** button for checking the agent's fixes: your local hub's `/` page
 (first visit through the link on the extension's options page, it carries the key).
 
 ### Test

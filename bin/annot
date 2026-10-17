@@ -7,7 +7,7 @@
 #   annot -s SITE accept ID                keep a fix (what MJ does with "Keep" on the green marker)
 #   annot -s SITE revert ID "why"          ask for the before state back (what "Revert" does)
 #   annot move SITE                        copy SITE's notes from the local hub into the site's own hub, then drop them locally
-# SITE = host as in the address bar, with the port if any: example.com, localhost:18080
+# SITE = host as in the address bar, with the port if any: example.com, 127.0.0.1:8080
 # Hubs: the local QA hub (.secrets/hub.env) for every site, unless the site has its own /notes/ hub
 # (.secrets/sites/SITE.env, written by install-site.sh). SN_WHO overrides "claude" / "MJ".
 set -euo pipefail
