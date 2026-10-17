@@ -65,7 +65,7 @@
     <p class="how">A browser extension for your own eyes: it works on any site, the site needs nothing. A secret link for the client's eyes. A phone that points.</p>
   </div>
   <div class="try">
-    <b>Try it on this page.</b> Press <span class="pillish">Add note</span> at the bottom right, click anything, say what should change. Two changes from the agent are already waiting under <span class="pillish green">✓ 2 to check</span>. Everything stays in your browser, nothing is sent anywhere.
+    <b>Try it on this page.</b> Press <span class="pillish">Add note</span> at the bottom right, click anything, say what should change. Five changes from the agent are already waiting under <span class="pillish green">✓ 5 to check</span>. Everything stays in this browser tab, nothing is sent anywhere; Keep and Revert here only show what would happen.
   </div>
 
   <section>
@@ -154,6 +154,6 @@ ciemniej
     } catch (err) { b.disabled = false; f.submit(); }
   });
 </script>
-<script src="../notes.js" data-site-notes data-demo data-seed='[{"selector": ".hero p", "comment": "shorter", "before": "847 changes is also 847 rounds of \"not that one, darker, drop the button\", with a wait in between. This is the loop that graduated: mark everything on the live page, one pass for the agent, keep or revert each change where it happened.", "fix": "Intro cut to two sentences | index.html hero p; przed: fixes/001.patch"}, {"selector": ".steps .step:nth-child(2) b", "comment": "say it works everywhere", "before": "Bigger, smaller", "fix": "Step title is &#39;Any site&#39; now | index.html steps 2; przed: fixes/002.patch"}]' defer></script>
+<script src="../notes.js" data-site-notes data-demo data-seed='[{"selector": ".hero p", "comment": "shorter", "before": "847 changes is also 847 rounds...", "fix": "Intro cut to two sentences | index.html hero p; przed: fixes/001.patch"}, {"selector": ".hero .how", "comment": "say plainly that it is a browser extension", "before": "Works on any site.", "fix": "Added: a browser extension for your eyes, a secret link, a phone | index.html hero .how; przed: fixes/002.patch"}, {"selector": ".steps .step:nth-child(2) b", "comment": "say it works everywhere", "before": "Bigger, smaller", "fix": "Step title is &#39;Any site&#39; now | index.html steps 2; przed: fixes/003.patch"}, {"selector": ".steps .step:nth-child(3) p", "comment": "no account?", "before": "Or a secret link for the client.", "fix": "Added: no account, no install | index.html steps 3; przed: fixes/004.patch"}, {"selector": ".want .lead", "comment": "too long, one sentence", "before": "The extension for your own sites, an install into your team&#39;s agent loop...", "fix": "Two sentences: what, and that I write back | index.html want lead; przed: fixes/005.patch"}]' defer></script>
 </body>
 </html>

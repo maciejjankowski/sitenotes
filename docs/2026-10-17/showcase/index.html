@@ -65,7 +65,7 @@
     <p class="how">Rozszerzenie przeglądarki na twoje oczy: działa na każdej stronie, strona nie potrzebuje niczego. Tajny link na oczy klienta. Telefon, którym się wskazuje.</p>
   </div>
   <div class="try">
-    <b>Wypróbuj na tej stronie.</b> Naciśnij <span class="pillish">Add note</span> w prawym dolnym rogu, kliknij cokolwiek, napisz, co ma się zmienić. Dwie poprawki od agenta już czekają pod <span class="pillish green">✓ 2 to check</span>. Wszystko zostaje w twojej przeglądarce, nic nigdzie nie wychodzi.
+    <b>Wypróbuj na tej stronie.</b> Naciśnij <span class="pillish">Add note</span> w prawym dolnym rogu, kliknij cokolwiek, napisz, co ma się zmienić. Pięć poprawek od agenta już czeka pod <span class="pillish green">✓ 5 to check</span>. Wszystko zostaje w tej karcie przeglądarki, nic nigdzie nie wychodzi; Keep i Revert tu tylko pokazują, co by się stało.
   </div>
 
   <section>
@@ -111,11 +111,11 @@ ciemniej
     <p class="lead">Zanim ktokolwiek to zobaczył, narzędzie przeszło audyt UX metodą Kruga: agent przeszedł żywe strony z trzema pytaniami z „Nie każ mi myśleć” (czy widać, co to jest; co mogę kliknąć; czy właśnie zrobiłem to, co trzeba), spisał 18 miejsc, w których trzeba myśleć, i naprawił wszystkie 18 tego samego popołudnia. Taki sam audyt mogę zrobić dla twojego narzędzia.</p>
     <table>
       <tr><th>Przed</th><th>Po</th></tr>
-      <tr><td>Pasek z dziewięcioma przyciskami: Paused, Lead, Follow, Hide fixed, List, Export site...</td><td>Add note. Ile otwartych. Ile do sprawdzenia. Menu na resztę.</td></tr>
+      <tr><td>Guzik z dziewięcioma opcjami: Paused, Lead, Follow, Hide fixed, List, Export site...</td><td>Add note. Ile otwartych. Ile do sprawdzenia. Menu na resztę.</td></tr>
       <tr><td>Etykieta przy najechaniu: <code>a:nth-of-type(3) 560×69</code></td><td>Etykieta przy najechaniu: „price · 14 zł”. Słowa samej strony.</td></tr>
       <tr><td>Karta: ścieżka, przyciski góra/dół i selektor CSS nad pytaniem</td><td>Karta: najpierw pytanie. Nic więcej do myślenia. Selektor schowany.</td></tr>
       <tr><td>Zielone znaczniki „✓35” z przerywanymi ramkami w starych miejscach, na nagłówku</td><td>Sam haczyk. Numer po najechaniu. Żadnych ramek tam, gdzie nic nie ma.</td></tr>
-      <tr><td>Zero podpowiedzi dla kogoś, kto widzi to pierwszy raz</td><td>„click anything on the page”, na pasku, dopóki nie ma pierwszej uwagi.</td></tr>
+      <tr><td>Zero podpowiedzi dla kogoś, kto widzi to pierwszy raz</td><td>„click anything on the page”, na guziku, dopóki nie ma pierwszej uwagi.</td></tr>
     </table>
   </section>
 
@@ -154,6 +154,6 @@ ciemniej
     } catch (err) { b.disabled = false; f.submit(); }
   });
 </script>
-<script src="notes.js" data-site-notes data-demo data-seed='[{"selector": ".hero p", "comment": "krócej", "before": "847 changes is also 847 rounds of \"not that one, darker, drop the button\", with a wait in between. This is the loop that graduated: mark everything on the live page, one pass for the agent, keep or revert each change where it happened.", "fix": "Wstęp skrócony do dwóch zdań | index.html hero p; przed: fixes/001.patch"}, {"selector": ".steps .step:nth-child(2) b", "comment": "napisz, że działa wszędzie", "before": "Większy, mniejszy", "fix": "Step title is &#39;Any site&#39; now | index.html steps 2; przed: fixes/002.patch"}]' defer></script>
+<script src="notes.js" data-site-notes data-demo data-seed='[{"selector": ".hero p", "comment": "krócej", "before": "847 zmian to też 847 rund...", "fix": "Wstęp skrócony do dwóch zdań | index.html hero p; przed: fixes/001.patch"}, {"selector": ".hero .how", "comment": "napisz wprost, że to rozszerzenie przeglądarki", "before": "Działa na każdej stronie.", "fix": "Dopisane: rozszerzenie przeglądarki na twoje oczy, tajny link, telefon | index.html hero .how; przed: fixes/002.patch"}, {"selector": ".steps .step:nth-child(2) b", "comment": "napisz, że działa wszędzie", "before": "Większy, mniejszy", "fix": "Tytuł kroku to teraz &#39;Każda strona&#39; | index.html steps 2; przed: fixes/003.patch"}, {"selector": ".steps .step:nth-child(3) p", "comment": "bez konta?", "before": "Albo tajny link dla klienta.", "fix": "Dopisane: bez konta, bez instalacji | index.html steps 3; przed: fixes/004.patch"}, {"selector": ".want .lead", "comment": "za długie, jedno zdanie", "before": "Rozszerzenie na własne strony, wpięcie w pętlę agenta...", "fix": "Dwa zdania: co, i że odpiszę | index.html want lead; przed: fixes/005.patch"}]' defer></script>
 </body>
 </html>

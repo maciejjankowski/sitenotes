@@ -296,10 +296,9 @@
     throw new Error('screenshots need the extension');
   }
   // ---- demo: a hub in localStorage, same actions, seeded with two changes to Keep or Revert ----
-  const DEMO_KEY = 'sn_demo_' + location.host;
+  let demoSt = null;  // in memory only: a reload brings the seeds back, nothing a visitor does is kept anywhere
   function demoStore() {
-    let st = null;
-    try { st = JSON.parse(keep('localStorage', DEMO_KEY) || 'null'); } catch (e) {}
+    let st = demoSt;
     if (!st) {
       const seeds = JSON.parse(document.querySelector('script[data-site-notes]').dataset.seed || '[]');
       st = { seq: 100, notes: [] };
@@ -309,9 +308,10 @@
           created_at: '2026-10-17 09:12', updated_at: '2026-10-17 09:40', history: [{ kind: 'fixed', at: '2026-10-17 09:40', who: 'agent', body: sd.fix }] });
       }
     }
+    demoSt = st;
     return st;
   }
-  const demoSave = st => keep('localStorage', DEMO_KEY, JSON.stringify(st));
+  const demoSave = st => { demoSt = st; };
   const now = () => new Date().toISOString().slice(0, 16).replace('T', ' ');
   async function demoSend(m) {
     const st = demoStore();
@@ -326,8 +326,7 @@
       Object.assign(n, { site: b.site, path: b.path, url: b.url, title: b.title, selector: b.selector, element: b.element, text: b.text, rect: b.rect, viewport: b.viewport, source: b.source, comment: b.comment, action: b.action, author: 'you', updated_at: now() });
     } else if (b.a === 'delete' && n) n.status = 'deleted';
     else if (b.a === 'restore' && n) n.status = 'open';
-    else if (b.a === 'accept' && n) n.status = 'accepted';
-    else if (b.a === 'revert' && n) { n.status = 'open'; n.revert = 1; n.history.push({ kind: 'revert', at: now(), who: 'you', body: b.body || '' }); }
+    else if (b.a === 'accept' || b.a === 'revert') return { ok: true, demo: true };  // visitors look, they do not decide
     else if (b.a === 'point') return { ok: true };
     demoSave(st);
     return { ok: true, id: n ? n.id : 0 };
@@ -633,7 +632,8 @@
     if (!n) return;
     closeChange();
     try {
-      await api({ a, id: n.id, body: a === 'revert' ? whyIn.value.trim() : '' });
+      const r = await api({ a, id: n.id, body: a === 'revert' ? whyIn.value.trim() : '' });
+      if (r && r.demo) { toast(a === 'accept' ? 'In the demo nothing changes. On your site Keep makes the change final and the tick goes away.' : 'In the demo nothing changes. On your site Revert sends the agent back to the state from before.'); return; }
       toast(a === 'accept' ? `Kept #${n.id}` : `Revert asked for #${n.id}: it is back on the list for the agent`);
     } catch (e) { toast(e.message, true); }
     loadNotes();
@@ -780,7 +780,7 @@
         ? () => api({ a: 'save', id: note.id, action: note.action, comment: note.comment, selector: note.selector, element: note.element,
                       text: note.text, rect: note.rect, viewport: note.viewport }).then(undone, e => toast(e.message, true))
         : () => api({ a: 'delete', id: res.id }).then(undone, e => toast(e.message, true));
-      toast((action === 'remove' ? 'Marked for removal' : 'Saved') + ' #' + res.id + (DEMO ? ', in this browser only' : note || shot || !EXT ? '' : ' (no screenshot)'), false, undo);
+      toast((action === 'remove' ? 'Marked for removal' : 'Saved') + ' #' + res.id + (DEMO ? ', in this tab only (a reload clears it)' : note || shot || !EXT ? '' : ' (no screenshot)'), false, undo);
     } catch (e) {
       host.style.visibility = '';
       toast('Not saved: ' + e.message, true);
