@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# annot - Site Notes for the AI agent that builds the site (notes from the browser extension or the notes.js script).
+#   annot sites                            every hub: sites with open / total notes
+#   annot export SITE [--all] [--json]     all open notes of the site, all pages, Markdown (default) or JSON
+#   annot -s SITE fix ID "what changed"    mark a note done; MJ can reopen it ("Not fixed") on the hub page
+#   annot -s SITE reopen ID "why"          open it again
+#   annot -s SITE accept ID                keep a fix (what MJ does with "Keep" on the green marker)
+#   annot -s SITE revert ID "why"          ask for the before state back (what "Revert" does)
+#   annot move SITE                        copy SITE's notes from the local hub into the site's own hub, then drop them locally
+# SITE = host as in the address bar, with the port if any: example.com, localhost:18080
+# Hubs: the local QA hub (.secrets/hub.env) for every site, unless the site has its own /notes/ hub
+# (.secrets/sites/SITE.env, written by install-site.sh). SN_WHO overrides "claude" / "MJ".
+set -euo pipefail
+ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+use_hub() {  # sets SN_HUB / SN_KEY for a site
+  SN_HUB=; SN_KEY=
+  . "$ROOT/.secrets/hub.env"
+  if [ -n "${1:-}" ] && [ -f "$ROOT/.secrets/sites/$1.env" ]; then . "$ROOT/.secrets/sites/$1.env"; fi
+  : "${SN_HUB:?run $ROOT/install.sh first}" "${SN_KEY:?run $ROOT/install.sh first}"
+}
+get() { curl -fsS -G -H "X-SN-Key: $SN_KEY" "$SN_HUB/api.php" "$@"; }
+post() { curl -fsS -X POST -H "X-SN-Key: $SN_KEY" -H 'Content-Type: application/json' --data-binary @- "$SN_HUB/api.php"; }
+SITE=
+if [ "${1:-}" = "-s" ]; then SITE="${2:?-s needs a SITE}"; shift 2; fi
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  sites)
+    use_hub; echo "# local hub $SN_HUB"; get -d a=sites -d format=txt
+    for f in "$ROOT"/.secrets/sites/*.env; do
+      [ -f "$f" ] || continue
+      s="$(basename "$f" .env)"; use_hub "$s"; echo "# $s hub $SN_HUB"; get -d a=sites -d format=txt || echo "(not reachable)"
+    done ;;
+  export)
+    site="${1:?usage: annot export SITE [--all] [--json]}"; shift
+    status=open; fmt=md
+    for a in "$@"; do case "$a" in --all) status=all ;; --json) fmt=json ;; *) echo "unknown flag $a" >&2; exit 2 ;; esac; done
+    use_hub "$site"
+    get --data-urlencode a=export --data-urlencode "site=$site" --data-urlencode "status=$status" --data-urlencode "format=$fmt" ;;
+  fix|reopen|accept|revert)
+    id="${1:?usage: annot -s SITE $cmd ID \"text\"}"
+    use_hub "$SITE"
+    jq -n --arg a "$cmd" --argjson id "$id" --arg body "${2:-}" --arg who "${SN_WHO:-$([ "$cmd" = fix ] && echo claude || echo MJ)}" \
+      '{a:$a, id:$id, body:$body, who:$who}' | post; echo ;;
+  move)
+    site="${1:?usage: annot move SITE}"
+    [ -f "$ROOT/.secrets/sites/$site.env" ] || { echo "$site has no hub of its own (install-site.sh)"; exit 1; }
+    use_hub; notes="$(get --data-urlencode a=list --data-urlencode "site=$site" --data-urlencode status=all)"
+    n="$(jq length <<<"$notes")"; [ "$n" -gt 0 ] || { echo "no local notes for $site"; exit 0; }
+    for i in $(seq 0 $((n - 1))); do
+      note="$(jq ".[$i]" <<<"$notes")"; old="$(jq -r .id <<<"$note")"; shot="$(jq -r '.shot // ""' <<<"$note")"
+      data=""; [ -n "$shot" ] && [ -f "$ROOT/hub/data/shots/$shot" ] && data="data:image/jpeg;base64,$(base64 -i "$ROOT/hub/data/shots/$shot" | tr -d '\n')"
+      use_hub "$site"
+      new="$(jq --arg shot "$data" '{a:"save", site, path, url, title, action, comment, selector, element, text, rect, viewport, source, author,
+               shot: (if $shot == "" then null else $shot end)}' <<<"$note" | post | jq -r .id)"
+      [ "$(jq -r .status <<<"$note")" = done ] && jq --argjson id "$new" '([.history[]? | select(.kind == "fixed")] | last) as $f
+               | {a:"fix", id:$id, body: ($f.body // "done before the move"), who: ($f.who // "MJ")}' <<<"$note" | post >/dev/null  # fix text names the patch
+      use_hub; jq -n --argjson id "$old" '{a:"delete", id:$id, who:"move"}' | post >/dev/null
+      echo "local #$old -> $site #$new"
+    done ;;
+  *) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+esac

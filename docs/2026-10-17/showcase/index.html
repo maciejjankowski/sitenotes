@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Site Notes</title>
+<meta name="description" content="Mark everything on the live page, the agent fixes it in one pass, you keep or revert each change in place.">
+<style>
+  :root { --bg: #fbfbfd; --fg: #1d1d1f; --mute: #6e6e73; --blue: #2f6fed; --green: #16a34a; --card: #fff; --line: #e8e8ed; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #000; --fg: #f5f5f7; --mute: #a1a1a6; --card: #1c1c1e; --line: #2c2c2e; } }
+  :root[data-theme="dark"] { --bg: #000; --fg: #f5f5f7; --mute: #a1a1a6; --card: #1c1c1e; --line: #2c2c2e; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  main { max-width: 980px; margin: 0 auto; padding: 0 16px 80px; }
+  .hero { padding: 96px 0 48px; text-align: center; }
+  .hero h1 { font-size: clamp(40px, 7vw, 72px); line-height: 1.05; letter-spacing: -.02em; margin: 0 0 18px; font-weight: 700; }
+  .hero p { font-size: clamp(19px, 2.6vw, 26px); color: var(--mute); max-width: 720px; margin: 0 auto; }
+  .hero .how { margin-top: 18px; font-size: 18px; }
+  .try { margin: 8px auto 0; max-width: 760px; padding: 16px 20px; border-radius: 14px; background: var(--card); box-shadow: 0 0 0 1px var(--line); font-size: 16px; color: var(--mute); }
+  .try b { color: var(--fg); }
+  .pillish { display: inline-block; padding: 2px 10px; border-radius: 999px; background: #2f6fed; color: #fff; font-weight: 600; font-size: 14px; }
+  .pillish.green { background: #15171c; color: #7ee2a0; box-shadow: inset 0 0 0 1px rgba(126,226,160,.6); }
+  .hero .tag { display: inline-block; margin-bottom: 22px; padding: 6px 14px; border-radius: 999px; background: var(--card); box-shadow: 0 0 0 1px var(--line); color: var(--mute); font-size: 14px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  section { padding: 56px 0 8px; }
+  h2 { font-size: clamp(28px, 4vw, 44px); letter-spacing: -.02em; line-height: 1.1; margin: 0 0 10px; }
+  .lead { font-size: clamp(18px, 2.2vw, 22px); color: var(--mute); margin: 0 0 28px; max-width: 680px; }
+  .shot { border-radius: 18px; overflow: hidden; background: var(--card); box-shadow: 0 30px 80px rgba(0,0,0,.14), 0 0 0 1px var(--line); }
+  .shot img { display: block; width: 100%; height: auto; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 36px 0 8px; }
+  .step { background: var(--card); border-radius: 16px; padding: 22px; box-shadow: 0 0 0 1px var(--line); }
+  .step b { display: block; font-size: 15px; letter-spacing: .04em; text-transform: uppercase; color: var(--blue); margin-bottom: 8px; }
+  .step p { margin: 0; color: var(--mute); }
+  pre { background: #15171c; color: #e6e6eb; padding: 20px 22px; border-radius: 14px; overflow: auto; font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0; }
+  pre .c { color: #8b8f9c; } pre .k { color: #7ee2a0; }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } .duo.one { grid-template-columns: 1fr; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; padding: 10px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--mute); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+  td:first-child { color: var(--mute); width: 42%; }
+  .offer { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .offer .step b { color: var(--green); }
+  .offer .price { font-size: 26px; font-weight: 700; margin: 6px 0 8px; color: var(--fg); }
+  .fine { color: var(--mute); font-size: 14px; margin-top: 18px; }
+  .big { text-align: center; padding: 80px 0 40px; }
+  .big h2 { font-size: clamp(32px, 5vw, 56px); }
+  .big p { color: var(--mute); font-size: clamp(18px, 2.4vw, 24px); max-width: 680px; margin: 10px auto 0; }
+  .form { display: grid; gap: 14px; max-width: 520px; }
+  .form label { display: grid; gap: 6px; font-size: 14px; color: var(--mute); }
+  .form input, .form select, .form textarea { font: inherit; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .form button { justify-self: start; font: inherit; font-weight: 600; color: #fff; background: var(--blue); border: 0; border-radius: 10px; padding: 12px 22px; cursor: pointer; }
+  .form .sent { margin: 0; color: var(--green); font-weight: 600; }
+  footer { color: var(--mute); font-size: 14px; border-top: 1px solid var(--line); padding-top: 24px; margin-top: 60px; overflow-wrap: anywhere; }
+  footer code { font-size: 13px; }
+  @media (max-width: 760px) { .steps, .offer, .duo { grid-template-columns: 1fr; } .hero { padding-top: 64px; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="hero">
+    <span class="tag">Site Notes</span>
+    <h1>You have done the Discord ping-pong.</h1>
+    <p>847 changes is also 847 rounds of "not that one, darker, drop the button", with a wait in between. This is the loop that graduated: mark everything on the live page, one pass for the agent, keep or revert each change where it happened.</p>
+    <p class="how">A browser extension for your own eyes: it works on any site, the site needs nothing. A secret link for the client's eyes. A phone that points.</p>
+  </div>
+  <div class="try">
+    <b>Try it on this page.</b> Press <span class="pillish">Add note</span> at the bottom right, click anything, say what should change. Two changes from the agent are already waiting under <span class="pillish green">✓ 2 to check</span>. Everything stays in your browser, nothing is sent anywhere.
+  </div>
+
+  <section>
+    <h2>Mark everything. Then go to your meeting.</h2>
+    <p class="lead">Click the thing, say it, next. No describing which button. No waiting for the answer before the next note.</p>
+    <div class="shot"><img src="batch.gif" alt="Adding four notes on a page: click the element, type ciemniej, Enter, next element"></div>
+    <div class="steps">
+      <div class="step"><b>Add note</b><p>One button. Click anything on the page and say what should change, or press Remove element.</p></div>
+      <div class="step"><b>Any site</b><p>The extension runs in your browser, so it works on every site you can open, screenshot included. Nothing to install on the site.</p></div>
+      <div class="step"><b>Phone or desktop</b><p>Point from the phone, type on the computer. Or a secret link for the client, no account, no install.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>One pass for the agent.</h2>
+    <p class="lead">Every note of the whole site arrives at once: page, selector, the element's HTML and text, the YAML source block, a screenshot. The agent fixes the batch and marks each note.</p>
+    <div class="duo one">
+      <pre><span class="c"># the agent, once</span>
+<span class="k">$</span> annot export bakery.test
+## / (4)
+### #63 CHANGE  div.price "14 zł"
+ciemniej
+- source: pages/home.yaml › cards
+- shot: hub/data/shots/63.jpg
+...</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Review where it happened.</h2>
+    <p class="lead">A fixed note does not vanish into a chat. It stays on the page as a green tick until you say Keep or Revert. Before and after, on the element.</p>
+    <div class="shot"><img src="review.gif" alt="Checking the agent's changes: the page dims, green ticks stay lit, Keep one change, Revert another with a reason"></div>
+    <div class="steps">
+      <div class="step"><b>To check</b><p>The page dims, only what the agent changed stays lit. Step through with the arrows.</p></div>
+      <div class="step"><b>Keep</b><p>The change stays, the tick goes away. That is the approval, on the page, by the person who asked.</p></div>
+      <div class="step"><b>Revert</b><p>Say why if you want. The agent gets a REVERT with the patch to undo. No second guess, no new attempt.</p></div>
+    </div>
+  </section>
+
+
+  <section>
+    <h2>Krug-level audit, same day.</h2>
+    <p class="lead">Before anyone else saw it, the tool went through a Krug-level UX audit: the agent walked the live pages with the three questions from "Don't Make Me Think" (is it obvious what this is, what can I click, did I just do the right thing), wrote 18 friction points, and fixed all 18 the same afternoon. The same audit is available for your tool.</p>
+    <table>
+      <tr><th>Before</th><th>After</th></tr>
+      <tr><td>A pill with nine controls: Paused, Lead, Follow, Hide fixed, List, Export site...</td><td>Add note. The open count. The to-check count. A menu for the rest.</td></tr>
+      <tr><td>Hover label: <code>a:nth-of-type(3) 560×69</code></td><td>Hover label: "price · 14 zł". The site's own words.</td></tr>
+      <tr><td>Card: breadcrumb, walk buttons and CSS selector above the question</td><td>Card: the question first. Nothing else to think about. Selector folded.</td></tr>
+      <tr><td>Green markers "✓35" with dashed boxes at stale positions over the header</td><td>A tick. The number on hover. No boxes where nothing is.</td></tr>
+      <tr><td>No hint for a first-time reviewer</td><td>"click anything on the page", in the pill, until the first note exists.</td></tr>
+    </table>
+  </section>
+
+
+  <section class="want" id="want">
+    <h2>Want this?</h2>
+    <p class="lead">The extension for your own sites, an install into your team's agent loop, or a Krug-level audit of your tool. Say which, I write back.</p>
+    <form action="https://formspree.io/f/xnpjwrda" method="POST" class="form">
+      <label>Your email<input type="email" name="email" required autocomplete="email"></label>
+      <label>What for
+        <select name="want">
+          <option>The extension for my sites</option>
+          <option>Install it into my team's agent loop</option>
+          <option>A Krug-level audit of my tool</option>
+          <option>Something else</option>
+        </select>
+      </label>
+      <label>Anything I should know<textarea name="message" rows="3"></textarea></label>
+      <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
+      <input type="hidden" name="_subject" value="Site Notes: want this">
+      <button type="submit">Send</button>
+      <p class="sent" hidden>Got it. I write back within a day.</p>
+    </form>
+  </section>
+</main>
+<script>
+  const f = document.querySelector('.form');
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const b = f.querySelector('button'); b.disabled = true;
+    try {
+      const r = await fetch(f.action, { method: 'POST', body: new FormData(f), headers: { Accept: 'application/json' } });
+      if (!r.ok) throw new Error();
+      f.querySelector('.sent').hidden = false; b.hidden = true;
+    } catch (err) { b.disabled = false; f.submit(); }
+  });
+</script>
+<script src="notes.js" data-site-notes data-demo data-seed='[{"selector": ".hero p", "comment": "shorter", "before": "847 changes is also 847 rounds of \"not that one, darker, drop the button\", with a wait in between. This is the loop that graduated: mark everything on the live page, one pass for the agent, keep or revert each change where it happened.", "fix": "Intro cut to two sentences | index.html hero p; przed: fixes/001.patch"}, {"selector": ".steps .step:nth-child(2) b", "comment": "say it works everywhere", "before": "Bigger, smaller", "fix": "Step title is &#39;Any site&#39; now | index.html steps 2; przed: fixes/002.patch"}]' defer></script>
+</body>
+</html>

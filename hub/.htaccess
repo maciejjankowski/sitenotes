@@ -1,0 +1,11 @@
+Options -Indexes
+<FilesMatch "^(secret|lib)\.php$">
+Require all denied
+</FilesMatch>
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^data/ - [F]
+</IfModule>
+<Files "notes.js">
+  Header set Cache-Control "no-cache, must-revalidate"
+</Files>

@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Site Notes",
+  "version": "0.1.0",
+  "description": "Click an element, say what to change or remove it. Export every note of a site for the AI agent that builds it.",
+  "permissions": ["scripting", "storage", "downloads", "clipboardWrite"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "Site Notes: click, then click elements (Alt+Shift+N)",
+    "default_icon": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png" }
+  },
+  "commands": {
+    "_execute_action": { "suggested_key": { "default": "Alt+Shift+N" } }
+  },
+  "options_page": "options.html",
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" }
+}

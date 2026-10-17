@@ -1,0 +1,9 @@
+.secrets/
+hub/secret.php
+hub/data/*
+!hub/data/.htaccess
+extension/defaults.js
+server/secret.php
+server/*.db
+test/out/
+docs/2026-10-17/astra_exec*

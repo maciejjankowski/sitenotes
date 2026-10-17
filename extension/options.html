@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Site Notes - settings</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 14px/1.45 -apple-system, system-ui, sans-serif; max-width: 520px; margin: 28px auto; padding: 0 16px; }
+  label { display: block; margin: 12px 0 4px; font-weight: 600; }
+  input { width: 100%; box-sizing: border-box; font: inherit; padding: 7px 9px; border: 1px solid #c8ccd4; border-radius: 7px; }
+  button { font: inherit; padding: 7px 14px; margin-top: 14px; border-radius: 7px; border: 0; background: #2f6fed; color: #fff; cursor: pointer; }
+  .mut { color: #888; font-size: 13px; } pre { white-space: pre-wrap; font-size: 12px; }
+</style></head><body>
+<h1>Site Notes</h1>
+<p class="mut">Toolbar icon or Alt+Shift+N on any page = note mode. Click an element, type what to change (Enter), or press Remove.</p>
+<label for="hub">Hub URL</label><input id="hub" placeholder="http://localhost:18080/annot">
+<label for="key">Key</label><input id="key" placeholder="from ~/code/annotator/.secrets/hub.env">
+<label for="author">Your name on notes</label><input id="author" placeholder="MJ">
+<button id="save">Save and test</button>
+<p id="out" class="mut"></p>
+<pre id="sites"></pre>
+<p><a id="open" target="_blank">Open all notes (hub)</a></p>
+<script src="defaults.js" onerror="void 0"></script>
+<script src="options.js"></script>
+</body></html>
