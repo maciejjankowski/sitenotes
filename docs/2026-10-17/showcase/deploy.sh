@@ -6,7 +6,7 @@ cd "$(dirname "$0")"; . ../../../.secrets/deploy.env
 V=$(md5 -q notes.js 2>/dev/null || md5sum notes.js | cut -c1-32); V=${V:0:10}
 S=$(mktemp -d); chmod 755 "$S"; rsync -rL --exclude=deploy.sh ./ "$S/"; chmod -R u=rwX,go=rX "$S"  # rsync -p copies dir modes onto public_html
 sed -i '' -e "s#src=\"notes.js\"#src=\"notes.js?v=$V\"#" "$S/index.html"
-sed -i '' -e "s#src=\"../notes.js\"#src=\"../notes.js?v=$V\"#" "$S/en/index.html"
+sed -i '' -e "s#src=\"../notes.js\"#src=\"../notes.js?v=$V\"#" "$S/pl/index.html"
 printf '<Files "notes.js">\n  Header set Cache-Control "no-cache, must-revalidate"\n</Files>\n' > "$S/.htaccess"
 rsync -rptz --delete -e "ssh -o BatchMode=yes" "$S/" "$SN_SSH:domains/$SN_SHOWCASE_HOST/public_html/"
 rm -rf "$S"
