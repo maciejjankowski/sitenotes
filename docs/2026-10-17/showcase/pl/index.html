@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Site Notes</title>
-<meta name="description" content="Zaznaczasz wszystko na żywej stronie, agent nanosi poprawki za jednym razem, każdą zmianę zatwierdzasz albo cofasz tam, gdzie zaszła.">
+<meta name="description" content="Zaznaczasz wszystko na żywej stronie, agent nanosi całą partię, każdą zmianę zatwierdzasz albo cofasz tam, gdzie zaszła.">
 <style>
   :root { --bg: #fbfbfd; --fg: #1d1d1f; --mute: #6e6e73; --blue: #2f6fed; --green: #16a34a; --card: #fff; --line: #e8e8ed; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #000; --fg: #f5f5f7; --mute: #a1a1a6; --card: #1c1c1e; --line: #2c2c2e; } }
@@ -61,27 +61,27 @@
   <div class="hero">
     <span class="tag">Site Notes</span><span class="lang"><a href="../">EN</a> · PL · <a href="https://github.com/maciejjankowski/sitenotes">GitHub</a></span>
     <h1>Ping-pong na Discordzie już przerabiałeś.</h1>
-    <p>847 zmian to też 847 rund „nie tak”, „ciemniej”, „bez tego guzika”, z czekaniem pomiędzy. To ta sama pętla, tylko bez ping-ponga: zaznaczasz wszystko na żywej stronie, agent dostaje całość za jednym razem, każdą zmianę zatwierdzasz albo cofasz tam, gdzie zaszła.</p>
-    <p class="how">Rozszerzenie przeglądarki dla ciebie: działa na każdej stronie, na stronie nie trzeba nic instalować. Klientowi wysyłasz tajny link. Z telefonu wystarczy stuknąć w element.</p>
+    <p>847 zmian, 847 rund „nie tak”, „ciemniej”, „bez tego guzika”. Site Notes zastępuje rundy: zaznaczasz wszystko na żywej stronie, agent nanosi całą partię, każdą zmianę zatwierdzasz albo cofasz tam, gdzie zaszła.</p>
+    <p class="how">Rozszerzenie dla ciebie. Tajny link dla klienta. Z telefonu: stuknij w element.</p>
   </div>
   <div class="try">
-    <b>Wypróbuj na tej stronie.</b> Naciśnij <span class="pillish">Add note</span> w prawym dolnym rogu, kliknij cokolwiek, napisz, co ma się zmienić. Pięć poprawek od agenta już czeka pod <span class="pillish green">✓ 5 to check</span>. Wszystko zostaje w tej karcie przeglądarki, nic nigdzie nie wychodzi; Keep i Revert tu tylko pokazują, co by się stało.
+    <b>Wypróbuj tutaj.</b> <span class="pillish">Add note</span>, prawy dolny róg. Pięć zmian czeka pod <span class="pillish green">✓ 5 to check</span>. Nic nie wychodzi z tej karty.
   </div>
 
   <section>
-    <h2>Zaznacz wszystko. Idź na spotkanie.</h2>
-    <p class="lead">Klikasz, piszesz, następny. Bez opisywania, o który guzik chodzi. Bez czekania na odpowiedź przed kolejną uwagą.</p>
-    <div class="shot"><img src="../batch.gif" alt="Cztery uwagi na stronie: klik w element, wpisanie „ciemniej”, Enter, następny element"></div>
+    <h2>Zaznacz wszystko.</h2>
+    <p class="lead">Klikasz, piszesz, następny. Bez opisywania, który guzik.</p>
+    <div class="shot"><img src="../batch.gif" alt="Cztery uwagi na stronie: klik w element, „ciemniej”, Enter, następny"></div>
     <div class="steps">
-      <div class="step"><b>Add note</b><p>Jeden przycisk. Klikasz cokolwiek na stronie i piszesz, co ma się zmienić, albo naciskasz Remove element.</p></div>
-      <div class="step"><b>Każda strona</b><p>Rozszerzenie działa w twojej przeglądarce, więc działa na każdej stronie, którą otworzysz, ze zrzutem ekranu. Na stronie nie instalujesz nic.</p></div>
-      <div class="step"><b>Telefon albo komputer</b><p>Wskazujesz z telefonu, piszesz na komputerze. Albo tajny link dla klienta: bez konta, bez instalacji.</p></div>
+      <div class="step"><b>Add note</b><p>Klikasz cokolwiek, piszesz, co ma się zmienić, albo Remove element.</p></div>
+      <div class="step"><b>Każda strona</b><p>Działa w twojej przeglądarce. Na stronie nic nie instalujesz.</p></div>
+      <div class="step"><b>Telefon albo komputer</b><p>Wskazujesz z telefonu, piszesz na komputerze. Albo wysyłasz klientowi tajny link.</p></div>
     </div>
   </section>
 
   <section>
-    <h2>Agent dostaje całość za jednym razem.</h2>
-    <p class="lead">Wszystkie uwagi z całej strony przychodzą naraz: podstrona, selektor, HTML i tekst elementu, blok źródłowy YAML, zrzut ekranu. Agent nanosi całą partię i odhacza każdą uwagę.</p>
+    <h2>Agent dostaje całość naraz.</h2>
+    <p class="lead">Wszystkie uwagi z całej strony: podstrona, selektor, HTML i tekst elementu, blok źródłowy, zrzut ekranu.</p>
     <div class="duo one">
       <pre><span class="c"># agent, jeden raz</span>
 <span class="k">$</span> annot export bakery.test
@@ -96,33 +96,33 @@ ciemniej
 
   <section>
     <h2>Sprawdzasz tam, gdzie się zmieniło.</h2>
-    <p class="lead">Naniesiona poprawka nie znika w czacie. Zostaje na stronie jako zielony znacznik, aż powiesz Keep albo Revert. Przed i po, na elemencie.</p>
-    <div class="shot"><img src="../review.gif" alt="Sprawdzanie poprawek agenta: strona ciemnieje, zielone znaczniki zostają, jedna zmiana Keep, druga Revert z powodem"></div>
+    <p class="lead">Naniesiona poprawka zostaje na stronie jako zielony znacznik, aż zdecydujesz.</p>
+    <div class="shot"><img src="../review.gif" alt="Sprawdzanie poprawek: strona ciemnieje, zielone znaczniki świecą, jedna zmiana Keep, druga Revert"></div>
     <div class="steps">
-      <div class="step"><b>Do sprawdzenia</b><p>Strona ciemnieje, świeci tylko to, co zmienił agent. Strzałkami przechodzisz po kolei.</p></div>
-      <div class="step"><b>Keep</b><p>Zmiana zostaje, znacznik znika. To jest zatwierdzenie: na stronie, przez osobę, która o to prosiła.</p></div>
-      <div class="step"><b>Revert</b><p>Możesz napisać dlaczego. Agent dostaje REVERT z łatką do cofnięcia. Bez zgadywania, bez kolejnej próby.</p></div>
+      <div class="step"><b>Do sprawdzenia</b><p>Strona ciemnieje, świeci tylko to, co się zmieniło.</p></div>
+      <div class="step"><b>Keep</b><p>Zmiana zostaje, znacznik znika.</p></div>
+      <div class="step"><b>Revert</b><p>Agent dostaje łatkę do cofnięcia. Bez drugiej próby.</p></div>
     </div>
   </section>
 
 
   <section>
     <h2>Audyt metodą Kruga, tego samego dnia.</h2>
-    <p class="lead">Zanim ktokolwiek to zobaczył, narzędzie przeszło audyt UX metodą Kruga: agent przeszedł żywe strony z trzema pytaniami z „Nie każ mi myśleć” (czy widać, co to jest; co mogę kliknąć; czy właśnie zrobiłem to, co trzeba), spisał 18 miejsc, w których trzeba myśleć, i naprawił wszystkie 18 tego samego popołudnia. Taki sam audyt mogę zrobić dla twojego narzędzia.</p>
+    <p class="lead">Trzy pytania z „Nie każ mi myśleć”: czy to oczywiste, co mogę kliknąć, czy zrobiłem to, co trzeba. 18 miejsc tarcia, 18 naprawionych tego samego popołudnia. Do zrobienia też dla twojego narzędzia.</p>
     <table>
       <tr><th>Przed</th><th>Po</th></tr>
-      <tr><td>Guzik z dziewięcioma opcjami: Paused, Lead, Follow, Hide fixed, List, Export site...</td><td>Add note. Ile otwartych. Ile do sprawdzenia. Menu na resztę.</td></tr>
-      <tr><td>Etykieta przy najechaniu: <code>a:nth-of-type(3) 560×69</code></td><td>Etykieta przy najechaniu: „price · 14 zł”. Słowa samej strony.</td></tr>
-      <tr><td>Karta: ścieżka, przyciski góra/dół i selektor CSS nad pytaniem</td><td>Karta: najpierw pytanie. Nic więcej do myślenia. Selektor schowany.</td></tr>
-      <tr><td>Zielone znaczniki „✓35” z przerywanymi ramkami w starych miejscach, na nagłówku</td><td>Sam znacznik. Numer po najechaniu. Żadnych ramek tam, gdzie nic nie ma.</td></tr>
-      <tr><td>Zero podpowiedzi dla kogoś, kto widzi to pierwszy raz</td><td>„click anything on the page”, na guziku, dopóki nie ma pierwszej uwagi.</td></tr>
+      <tr><td>Dziewięć opcji: Paused, Lead, Follow, Hide fixed, List, Export site...</td><td>Add note, dwa liczniki, menu.</td></tr>
+      <tr><td>Najechanie: <code>a:nth-of-type(3) 560×69</code></td><td>Najechanie: „price · 14 zł”.</td></tr>
+      <tr><td>Ścieżka, przyciski i selektor nad pytaniem</td><td>Najpierw pytanie. Selektor schowany.</td></tr>
+      <tr><td>Znaczniki „✓35” z przerywanymi ramkami w starych miejscach</td><td>Znacznik. Numer po najechaniu.</td></tr>
+      <tr><td>Zero podpowiedzi dla kogoś, kto widzi to pierwszy raz</td><td>„click anything on the page” do pierwszej uwagi.</td></tr>
     </table>
   </section>
 
 
   <section class="want" id="want">
     <h2>Chcesz to?</h2>
-    <p class="lead">Rozszerzenie na własne strony, wpięcie w pętlę agenta w twoim zespole albo audyt twojego narzędzia metodą Kruga. Napisz które, odpiszę.</p>
+    <p class="lead">Rozszerzenie, wpięcie w pętlę agenta albo audyt metodą Kruga. Napisz które.</p>
     <form action="https://formspree.io/f/xnpjwrda" method="POST" class="form">
       <label>Twój e-mail<input type="email" name="email" required autocomplete="email"></label>
       <label>Na co
@@ -137,7 +137,7 @@ ciemniej
       <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
       <input type="hidden" name="_subject" value="Site Notes: want this">
       <button type="submit">Wyślij</button>
-      <p class="sent" hidden>Mam. Odpiszę w ciągu dnia.</p>
+      <p class="sent" hidden>Mam. Odpowiedź w ciągu dnia.</p>
     </form>
   </section>
   <footer>Kod i rozszerzenie: <a href="https://github.com/maciejjankowski/sitenotes">github.com/maciejjankowski/sitenotes</a></footer>
@@ -154,6 +154,6 @@ ciemniej
     } catch (err) { b.disabled = false; f.submit(); }
   });
 </script>
-<script src="../notes.js" data-site-notes data-demo data-seed='[{"selector": ".hero p", "comment": "krócej", "before": "847 zmian to też 847 rund...", "fix": "Wstęp skrócony do dwóch zdań | index.html hero p; przed: fixes/001.patch"}, {"selector": ".hero .how", "comment": "napisz wprost, że to rozszerzenie przeglądarki", "before": "Działa na każdej stronie.", "fix": "Dopisane: rozszerzenie dla ciebie, tajny link dla klienta, stuknięcie z telefonu | index.html hero .how; przed: fixes/002.patch"}, {"selector": ".steps .step:nth-child(2) b", "comment": "napisz, że działa wszędzie", "before": "Większy, mniejszy", "fix": "Tytuł kroku to teraz &#39;Każda strona&#39; | index.html steps 2; przed: fixes/003.patch"}, {"selector": ".steps .step:nth-child(3) p", "comment": "bez konta?", "before": "Albo tajny link dla klienta.", "fix": "Dopisane: bez konta, bez instalacji | index.html steps 3; przed: fixes/004.patch"}, {"selector": ".want .lead", "comment": "za długie, jedno zdanie", "before": "Rozszerzenie na własne strony, wpięcie w pętlę agenta...", "fix": "Dwa zdania: co, i że odpiszę | index.html want lead; przed: fixes/005.patch"}]' defer></script>
+<script src="../notes.js" data-site-notes data-demo data-seed='[{"selector": ".hero p", "comment": "krócej", "before": "847 changes is also 847 rounds...", "fix": "Wstęp to dwa zdania | index.html hero p; przed: fixes/001.patch"}, {"selector": ".hero .how", "comment": "napisz wprost, że to rozszerzenie", "before": "Działa na każdej stronie.", "fix": "Dopisane: rozszerzenie, tajny link, telefon | index.html hero .how; przed: fixes/002.patch"}, {"selector": ".steps .step:nth-child(2) b", "comment": "napisz, że działa wszędzie", "before": "Większy, mniejszy", "fix": "Tytuł kroku to teraz &#39;Każda strona&#39; | index.html steps 2; przed: fixes/003.patch"}, {"selector": ".steps .step:nth-child(3) p", "comment": "bez konta?", "before": "Albo tajny link dla klienta.", "fix": "Dopisane: bez konta, bez instalacji | index.html steps 3; przed: fixes/004.patch"}, {"selector": ".want .lead", "comment": "za długie, jedno zdanie", "before": "Rozszerzenie na własne strony, wpięcie w pętlę agenta...", "fix": "Dwa zdania: co, i że odpiszę | index.html want lead; przed: fixes/005.patch"}]' defer></script>
 </body>
 </html>
