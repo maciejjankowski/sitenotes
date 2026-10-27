@@ -6,6 +6,8 @@
 //   GET  ?a=export&site=HOST[&status=open|all][&format=md|json]   all pages of a site, for an AI agent
 //   GET  ?a=shot&id=N                                             screenshot of note N
 //   POST {a:"save", [id], site, path, url, title, action: change|remove, comment, selector, element, text, rect, viewport, source, shot, author}
+//   POST {a:"save", action: question, ...}                       QUESTION from the agent (bin/annot ask), red marker on the page
+//   POST {a:"answer", id, body, who}                            the owner answers a QUESTION; stored in the history, note stays open
 //   POST {a:"fix"|"reopen", id, body, who}                        status change, kept in the note history
 //   POST {a:"accept", id, who}                                     MJ keeps a fix: done -> accepted (no longer shown as changed)
 //   POST {a:"revert", id, body, who}                               MJ wants the before state back: -> open, flagged for the agent
@@ -57,9 +59,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     switch ($in['a'] ?? '') {
         case 'save':
-            $action = ($in['action'] ?? '') === 'remove' ? 'remove' : 'change';
+            $action = in_array($in['action'] ?? '', ['remove', 'question'], true) ? $in['action'] : 'change';
+            if ($note && $note['action'] === 'question') $action = 'question';  // an edit never turns a question into a change
             $comment = sn_cut($in['comment'] ?? '', 5000);
-            if ($action === 'change' && $comment === '') out(['error' => 'empty note'], 400);
+            if ($action !== 'remove' && $comment === '') out(['error' => 'empty note'], 400);
             if ($note) {
                 $db->prepare('UPDATE notes SET action = ?, comment = ?, updated_at = ? WHERE id = ?')
                    ->execute([$action, $comment, sn_now(), $id]);
@@ -88,6 +91,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $shot = is_string($in['shot'] ?? null) ? sn_save_shot($id, $in['shot']) : null;
             if ($shot) $db->prepare('UPDATE notes SET shot = ? WHERE id = ?')->execute([$shot, $id]);
             out(['ok' => true, 'id' => $id, 'shot' => (bool)$shot]);
+        case 'answer':
+            if (!$note) out(['error' => 'id needed'], 400);
+            $body = sn_cut($in['body'] ?? '', 2000);
+            if ($body === '') out(['error' => 'empty answer'], 400);
+            $db->prepare('UPDATE notes SET updated_at = ? WHERE id = ?')->execute([sn_now(), $id]);
+            sn_event($id, 'answered', $who ?: 'MJ', $body);
+            out(['ok' => true, 'id' => $id]);
         case 'fix':
         case 'reopen':
             if (!$note) out(['error' => 'id needed'], 400);

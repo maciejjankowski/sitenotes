@@ -114,6 +114,7 @@ removed or moved by the fix; no dashed box, the stored position is stale after a
 ```
 bin/annot sites                            # every hub: sites with open / total notes
 bin/annot export SITE [--all] [--json]     # all open notes of the site, grouped by page, Markdown by default
+bin/annot -s SITE ask PATH SELECTOR "question"   # QUESTION note from the agent, red marker (author claude); e.g. ask /elk-workation/ "#rezerwacja > h2" "Which dates?"
 bin/annot -s SITE fix ID "what you changed"
 bin/annot -s SITE reopen ID "why"
 bin/annot -s SITE accept ID                # same as Keep on the green marker
@@ -126,11 +127,22 @@ Screenshot paths in the export are local files (`hub/data/shots/ID.jpg`), readab
 Overview with screenshots and a **Not fixed** button for checking the agent's fixes: your local hub's `/` page
 (first visit through the link on the extension's options page, it carries the key).
 
+### Questions (agent asks the owner)
+`ask` creates an open note of kind QUESTION (stored as `action=question`, no schema change). On the page it is a **red** marker, also
+while paused; the card shows the question and the button says **Answer**. The answer is stored in the note history (`answered`) and the
+note stays open. `annot export` prints `### #ID QUESTION`, then `- answer (time by who): "..."` lines, or `- answer: (none yet)`.
+Close it with `annot -s SITE fix ID "what you did"`.
+
+### Fixed notes
+Fixed (done/accepted) notes are not drawn on page load. Menu **Show fixed** / **Hide fixed** toggles the green markers; the choice is kept
+in `localStorage` (`sn_showfixed`). The pill's **n to check** view still lights them up.
+
 ### Test
 ```
 source ~/code/the-template/venv/bin/activate
 python3 test/e2e.py    # extension, 50 checks
 python3 test/page.py   # script on a site + hand-over to the extension, 22 checks
+python3 test/question.py  # QUESTION notes, answers in the export, Show fixed, 10 checks
 ```
 Both drive the installed Brave (`SN_BROWSER=...` for another Chromium browser; branded Chrome ignores `--load-extension`).
 Never download a browser. Test notes (site `fixture.test`, paths `/sn-fixture/`) are deleted at the end (`--keep` leaves them).

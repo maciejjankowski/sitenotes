@@ -59,11 +59,13 @@ function sn_notes(string $site, ?string $path, string $status): array {
     $q = sn_db()->prepare($sql . ' ORDER BY path, id');
     $q->execute($args);
     $notes = $q->fetchAll();
-    $ev = sn_db()->prepare("SELECT at, kind, who, body FROM events WHERE note_id = ? AND kind IN ('fixed','reopened','accepted','revert') ORDER BY id");
+    $ev = sn_db()->prepare("SELECT at, kind, who, body FROM events WHERE note_id = ? AND kind IN ('fixed','reopened','accepted','revert','answered') ORDER BY id");
     foreach ($notes as &$n) {
         $ev->execute([$n['id']]);
         $n['history'] = $ev->fetchAll();
         $last = end($n['history']);
+        $last = null;
+        foreach ($n['history'] as $e) if ($e['kind'] !== 'answered') $last = $e;
         $n['revert'] = $n['status'] === 'open' && $last && $last['kind'] === 'revert';  // MJ asked for the before state back
     }
     return $notes;
@@ -107,6 +109,7 @@ function sn_export_md(string $site, string $status): string {
         . "Each note is about one element of the page. Find it by the CSS selector; if the selector no longer matches, use the element HTML and text.\n"
         . "\"source\" (when present) names the source block the element was rendered from.\n\n"
         . "- **CHANGE**: do what the note says.\n"
+        . "- **QUESTION**: you (the agent) asked the site owner this about the element; their answer appears under it as \"answer\". Read the answer, act on it, then close it with `annot -s $site fix ID \"what you did\"`. No answer yet = still waiting.\n"
         . "- **REMOVE**: delete that element from the page (the note, if any, says why).\n"
         . "- **history**: the note was fixed before and reopened, so that earlier fix did not work. Read it before trying again.\n"
         . "- **REVERT**: MJ looked at the fix and wants the state from before it back. Undo that fix (the fix text names the patch), do not try another one, then `annot -s $site fix ID \"reverted\"`.\n"
@@ -131,7 +134,11 @@ function sn_export_md(string $site, string $status): string {
             }
             if ($n['shot']) $o .= '- screenshot: ' . __DIR__ . '/data/shots/' . $n['shot'] . "\n";
             $o .= '- noted: ' . substr($n['created_at'], 0, 16) . ' by ' . ($n['author'] ?: '?') . "\n";
-            if ($n['history']) $o .= '- history: ' . sn_history($n) . "\n";
+            foreach ($n['history'] as $e) if ($e['kind'] === 'answered')
+                $o .= '- answer (' . substr($e['at'], 0, 16) . ' by ' . ($e['who'] ?: '?') . '): "' . preg_replace('/\s+/', ' ', $e['body']) . "\"\n";
+            if ($n['action'] === 'question' && !array_filter($n['history'], fn($e) => $e['kind'] === 'answered')) $o .= "- answer: (none yet)\n";
+            $h = array_values(array_filter($n['history'], fn($e) => $e['kind'] !== 'answered'));
+            if ($h) $o .= '- history: ' . sn_history(['history' => $h] + $n) . "\n";
         }
     }
     return $o;

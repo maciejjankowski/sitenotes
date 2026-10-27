@@ -96,6 +96,10 @@
     .dot { position: fixed; pointer-events: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #2f6fed; color: #fff;
            font-size: 10px; font-weight: 700; line-height: 18px; text-align: center; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
     .dot.remove { background: #e5484d; }
+    .dot.question { background: #d90429; box-shadow: 0 0 0 2px #fff, 0 1px 5px rgba(0,0,0,.45); }
+    .qbox { margin: 2px 2px 6px; padding: 6px 8px; border-left: 3px solid #d90429; background: rgba(217,4,41,.07); border-radius: 4px; font-size: 12px; white-space: pre-wrap; }
+    .qbox b { color: #d90429; font-size: 10px; letter-spacing: .04em; display: block; }
+    .qbox i { display: block; margin-top: 4px; font-style: normal; color: #6b7080; }
     @media (max-width: 520px) { .pill { right: 8px; bottom: 8px; } .menu { right: 8px; } }
     .pill { position: fixed; right: 14px; bottom: 14px; pointer-events: auto; display: flex; align-items: center; gap: 2px; padding: 4px;
             background: #15171c; color: #fff; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.30); }
@@ -174,7 +178,7 @@
     .side .pg:hover, .side .it:hover { background: rgba(47,111,237,.08); }
     .side .it { display: flex; gap: 6px; width: 100%; text-align: left; padding: 4px 10px 4px 16px; border-radius: 0; font-weight: 400; }
     .side .it b { flex: none; min-width: 38px; font-size: 11px; font-weight: 700; color: #2f6fed; }
-    .side .it.ch b { color: #16a34a; } .side .it.rv b { color: #c2410c; } .side .it.rm b { color: #e5484d; }
+    .side .it.q b { color: #d90429; } .side .it.ch b { color: #16a34a; } .side .it.rv b { color: #c2410c; } .side .it.rm b { color: #e5484d; }
     .side .it span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .side .empty { padding: 12px; color: #6b7080; }
     @media (prefers-color-scheme: dark) { .side { background: #202227; color: #eceef2; } .side header { border-color: #3b3e47; } .side .pg { color: #b9bdc8; } }
@@ -207,6 +211,7 @@
       <div class="ring"></div>
       <div class="card">
         <input class="who" placeholder="Your name (asked once)" hidden>
+        <div class="qbox" hidden></div>
         <textarea rows="2" placeholder="What should change?"></textarea>
         <div class="nav" hidden><button class="w up">&#x2191;</button><button class="w down">&#x2193;</button><div class="crumbs"></div></div>
         <details class="seld"><summary>Selector (Alt+&#x2191; picks the bigger piece around it)</summary><div class="selrow"><input class="sel" spellcheck="false" autocomplete="off" aria-label="CSS selector"><span class="cnt"></span></div></details>
@@ -215,7 +220,7 @@
     </div>
     <div class="menu" hidden>
       <button class="ls" title="All notes and changes of this site, page by page (Alt+Shift+L)">List of all notes</button>
-      <button class="hf" hidden title="Hide the green markers of what was already fixed">Hide fixed</button>
+      <button class="hf" hidden title="Fixed notes are hidden by default; show their green markers (the choice is remembered)">Show fixed</button>
       <hr>
       <button class="rm-mode" title="Each element you tap here opens on the computer that types for the phone">Point from this phone</button>
       <button class="fl" title="Open the card on whatever the phone points at">Type for the phone</button>
@@ -327,6 +332,7 @@
     } else if (b.a === 'delete' && n) n.status = 'deleted';
     else if (b.a === 'restore' && n) n.status = 'open';
     else if (b.a === 'accept' || b.a === 'revert') return { ok: true, demo: true };  // visitors look, they do not decide
+    else if (b.a === 'answer' && n) n.history.push({ kind: 'answered', at: now(), who: 'you', body: b.body });
     else if (b.a === 'point') return { ok: true };
     demoSave(st);
     return { ok: true, id: n ? n.id : 0 };
@@ -437,12 +443,12 @@
     }
     spotPath.setAttribute('d', d);
   }
-  let hideFixed = !!keep('sessionStorage', 'sn_hidefixed');
+  let showFixed = keep('localStorage', 'sn_showfixed') === '1';  // fixed notes stay hidden until asked for (remembered in this browser)
   function drawChanged() {
     ghosts.textContent = '';
     const spots = [];
-    const hf = $('.menu .hf'); hf.hidden = !changed.length; hf.classList.toggle('on', hideFixed); hf.textContent = hideFixed ? 'Show fixed again' : 'Hide fixed';
-    if (mode !== 'off' && !hideFixed) for (const n of changed) {  // also while paused: links work, the green markers still click
+    const hf = $('.menu .hf'); hf.hidden = !changed.length; hf.classList.toggle('on', showFixed); hf.textContent = showFixed ? 'Hide fixed' : 'Show fixed';
+    if (mode !== 'off' && (showFixed || spot)) for (const n of changed) {  // also while paused: links work, the green markers still click
       const at = locate(n);
       if (!at) continue;
       spots.push(at);
@@ -471,20 +477,21 @@
   }
   function drawDots() {
     dots.textContent = '';
-    if (mode === 'on' && !spot) for (const n of notes) {
+    if (mode !== 'off' && !spot) for (const n of notes) {
+      if (mode !== 'on' && n.action !== 'question') continue;  // questions from the agent show while paused too
       let el = null;
       try { el = n.selector ? document.querySelector(n.selector) : null; } catch (e) {}
       if (!el) continue;
       const r = el.getBoundingClientRect();
       if (r.bottom < 0 || r.top > innerHeight || (!r.width && !r.height)) continue;
       const d = document.createElement('div');
-      d.className = 'dot' + (n.action === 'remove' ? ' remove' : '');
+      d.className = 'dot' + (n.action === 'remove' ? ' remove' : n.action === 'question' ? ' question' : '');
       d.textContent = n.id;
-      d.title = (n.action === 'remove' ? 'REMOVE' + (n.comment ? ': ' : '') : '') + n.comment;
+      d.title = (n.action === 'remove' ? 'REMOVE' + (n.comment ? ': ' : '') : n.action === 'question' ? 'QUESTION: ' : '') + n.comment;
       d.style.left = Math.max(2, r.left - 9) + 'px';
       d.style.top = Math.max(2, r.top - 9) + 'px';
       if (n.revert) { d.className = 'dot revert'; d.title = 'REVERT requested: ' + n.comment; }
-      d.addEventListener('click', () => openCard(el, n, el));
+      d.addEventListener('click', () => { if (mode !== 'on') setMode('on'); openCard(el, n, el); });
       dots.append(d);
     }
     $('.n').textContent = notes.length ? notes.length + ' open' : mode === 'on' && !spot ? 'click anything on the page' : '';  // the hint lives where the eye is
@@ -546,10 +553,10 @@
       pg.addEventListener('click', () => goTo(k));
       sideList.append(pg);
       for (const n of e.notes) {
-        const kind = n.status === 'done' ? 'ch' : n.revert ? 'rv' : n.action === 'remove' ? 'rm' : '';
+        const kind = n.status === 'done' ? 'ch' : n.revert ? 'rv' : n.action === 'question' ? 'q' : n.action === 'remove' ? 'rm' : '';
         const it = Object.assign(document.createElement('button'), { className: 'it ' + kind, title: n.comment });
-        it.append(Object.assign(document.createElement('b'), { textContent: (n.status === 'done' ? '✓' : n.revert ? '↺' : '#') + n.id }),
-                  Object.assign(document.createElement('span'), { textContent: n.comment || (n.action === 'remove' ? 'remove' : '') }));
+        it.append(Object.assign(document.createElement('b'), { textContent: (n.status === 'done' ? '✓' : n.revert ? '↺' : n.action === 'question' ? '?' : '#') + n.id }),
+                  Object.assign(document.createElement('span'), { textContent: (n.action === 'question' ? 'QUESTION: ' : '') + (n.comment || (n.action === 'remove' ? 'remove' : '')) }));
         it.addEventListener('click', () => goTo(k, n.id));
         sideList.append(it);
       }
@@ -659,7 +666,7 @@
     openChange(changed[spotI]);
     redraw();
   }
-  $('.menu .hf').addEventListener('click', () => { hideFixed = !hideFixed; keep('sessionStorage', 'sn_hidefixed', hideFixed ? '1' : null); if (hideFixed) closeChange(); redraw(); });
+  $('.menu .hf').addEventListener('click', () => { showFixed = !showFixed; keep('localStorage', 'sn_showfixed', showFixed ? '1' : null); if (!showFixed && !spot) closeChange(); redraw(); });
   chsBtn.addEventListener('click', () => { if (changed.length) setSpot(!spot); else { toggleSide(true); toast('Changes on other pages are listed under their page; tap one to go there'); } });
   $('.pill .pv').addEventListener('click', () => spotGo(-1));
   $('.pill .nx').addEventListener('click', () => spotGo(1));
@@ -707,8 +714,16 @@
     sel = { chain, i: chain.indexOf(el), el, note };
     base = null;
     drawHl();
-    ta.value = note ? note.comment : '';
-    ta.placeholder = follow && lastPtr && lastPtr.viewport ? 'What should change? (tapped on ' + lastPtr.viewport + ')' : 'What should change?';
+    const isQ = !!note && note.action === 'question';
+    const qb = $('.qbox'); qb.hidden = !isQ; qb.textContent = '';
+    if (isQ) {
+      qb.append(Object.assign(document.createElement('b'), { textContent: 'QUESTION · ' + (note.author || 'agent') }), document.createTextNode(note.comment));
+      for (const a of (note.history || []).filter(e => e.kind === 'answered')) qb.append(Object.assign(document.createElement('i'), { textContent: 'Answer (' + (a.who || '?') + '): ' + a.body }));
+    }
+    $('.ok').textContent = isQ ? 'Answer' : 'Save';
+    rmBtn.hidden = isQ;
+    ta.value = isQ ? '' : note ? note.comment : '';
+    ta.placeholder = isQ ? 'Your answer' : follow && lastPtr && lastPtr.viewport ? 'What should change? (tapped on ' + lastPtr.viewport + ')' : 'What should change?';
     delBtn.hidden = !note;
     whoIn.hidden = EXT || !!WHO;
     const marked = !!note && note.action === 'remove';
@@ -761,6 +776,13 @@
   async function save(action) {
     if (!sel) return;
     const { el, note } = sel, comment = ta.value.trim(), typed = selIn.value.trim();
+    if (note && note.action === 'question') {  // an answer is added to the note's history; the note stays open until the agent closes it
+      if (!comment) { card.classList.add('need'); ta.focus(); return; }
+      closeCard();
+      try { await api({ a: 'answer', id: note.id, body: comment }); toast('Answered #' + note.id); } catch (e) { toast('Not saved: ' + e.message, true); }
+      loadNotes();
+      return;
+    }
     if (action === 'change' && !comment) { card.classList.add('need'); ta.focus(); return; }
     if (!EXT && !WHO && whoIn.value.trim()) { WHO = whoIn.value.trim().slice(0, 60); keep('localStorage', 'sn_who', WHO); }
     closeCard();

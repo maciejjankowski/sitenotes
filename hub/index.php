@@ -90,7 +90,7 @@ $status = in_array($_GET['status'] ?? '', ['open', 'done', 'all'], true) ? $_GET
       <div class="note <?= $n['status'] === 'done' ? 'done' : '' ?>">
         <div><?php if ($n['shot']): ?><a href="api.php?a=shot&amp;id=<?= (int)$n['id'] ?>" target="_blank"><img loading="lazy" src="api.php?a=shot&amp;id=<?= (int)$n['id'] ?>" alt="note <?= (int)$n['id'] ?>"></a><?php else: ?><span class="meta">no screenshot</span><?php endif; ?></div>
         <div>
-          <span class="tag <?= $e($n['action']) ?>"><?= $n['action'] === 'remove' ? 'REMOVE' : 'CHANGE' ?></span><?php if ($n['status'] === 'done'): ?><span class="tag done">done</span><?php endif; ?>
+          <span class="tag <?= $e($n['action']) ?>"><?= $n['action'] === 'remove' ? 'REMOVE' : ($n['action'] === 'question' ? 'QUESTION' : 'CHANGE') ?></span><?php if ($n['status'] === 'done'): ?><span class="tag done">done</span><?php endif; ?>
           <span class="meta">#<?= (int)$n['id'] ?> &middot; <?= $e(substr($n['created_at'], 0, 16)) ?> &middot; <?= $e($n['author']) ?></span>
           <?php if ($n['comment'] !== ''): ?><div class="c"><?= $e($n['comment']) ?></div><?php endif; ?>
           <code><?= $e($n['selector']) ?></code>

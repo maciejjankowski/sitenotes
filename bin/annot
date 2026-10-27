@@ -2,6 +2,7 @@
 # annot - Site Notes for the AI agent that builds the site (notes from the browser extension or the notes.js script).
 #   annot sites                            every hub: sites with open / total notes
 #   annot export SITE [--all] [--json]     all open notes of the site, all pages, Markdown (default) or JSON
+#   annot -s SITE ask PATH SELECTOR "question"   new QUESTION note (red marker) on page PATH, anchored on the CSS selector; author claude
 #   annot -s SITE fix ID "what changed"    mark a note done; MJ can reopen it ("Not fixed") on the hub page
 #   annot -s SITE reopen ID "why"          open it again
 #   annot -s SITE accept ID                keep a fix (what MJ does with "Keep" on the green marker)
@@ -36,6 +37,13 @@ case "$cmd" in
     for a in "$@"; do case "$a" in --all) status=all ;; --json) fmt=json ;; *) echo "unknown flag $a" >&2; exit 2 ;; esac; done
     use_hub "$site"
     get --data-urlencode a=export --data-urlencode "site=$site" --data-urlencode "status=$status" --data-urlencode "format=$fmt" ;;
+  ask)
+    path="${1:?usage: annot -s SITE ask PATH SELECTOR \"question\"}"; selector="${2:?usage: annot -s SITE ask PATH SELECTOR \"question\"}"; text="${3:?usage: annot -s SITE ask PATH SELECTOR \"question\"}"
+    [ -n "$SITE" ] || { echo "ask needs -s SITE" >&2; exit 2; }
+    case "$path" in /*) ;; *) echo "PATH must start with /" >&2; exit 2 ;; esac
+    use_hub "$SITE"
+    jq -n --arg site "$SITE" --arg path "$path" --arg url "https://$SITE$path" --arg sel "$selector" --arg c "$text" --arg who "${SN_WHO:-claude}" \
+      '{a:"save", action:"question", site:$site, path:$path, url:$url, title:"", comment:$c, selector:$sel, element:"", text:"", rect:"", viewport:"", source:"", author:$who, who:$who}' | post; echo ;;
   fix|reopen|accept|revert)
     id="${1:?usage: annot -s SITE $cmd ID \"text\"}"
     use_hub "$SITE"
@@ -57,5 +65,5 @@ case "$cmd" in
       use_hub; jq -n --argjson id "$old" '{a:"delete", id:$id, who:"move"}' | post >/dev/null
       echo "local #$old -> $site #$new"
     done ;;
-  *) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+  *) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac
