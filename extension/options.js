@@ -20,3 +20,15 @@ chrome.storage.local.get(['hub', 'key'], s => {
   const hubUrl = (s.hub || d.hub || 'http://localhost:18080/annot').replace(/\/+$/, '');
   document.getElementById('open').href = hubUrl + '/?key=' + encodeURIComponent(s.key || d.key || '');
 });
+
+// Recent failed hub calls (kept by background.js; "sent" = already in that hub's error log, see bin/annot errors).
+function showFails() {
+  chrome.storage.local.get('fails', s => {
+    const list = (s.fails || []).slice(-15).reverse();
+    document.getElementById('fails').textContent = list.length
+      ? list.map(f => `${new Date(f.at).toLocaleString('pl-PL')}  ${f.kind}${f.status ? ' ' + f.status : ''}  ${f.a || '-'}  ${f.hub}\n   ${f.error}${f.detail ? '\n   ' + f.detail.slice(0, 160) : ''}\n   ${f.sent ? 'sent to ' + f.sent_to : 'not sent yet'}`).join('\n')
+      : '(none)';
+  });
+}
+showFails();
+document.getElementById('clearFails').addEventListener('click', () => chrome.storage.local.remove('fails', showFails));

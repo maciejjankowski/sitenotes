@@ -1,5 +1,5 @@
 Options -Indexes
-<FilesMatch "^(secret|lib)\.php$">
+<FilesMatch "^(secret|lib|errlog)\.php$">
 Require all denied
 </FilesMatch>
 <IfModule mod_rewrite.c>

@@ -12,7 +12,7 @@ for d in "${sites[@]}"; do
   (
     . "$f"; d="$(basename "$f" .env)"
     [ -n "${SN_WEBROOT:-}" ] || { echo "$d: no SN_WEBROOT in $f, skipped"; exit 0; }
-    cp hub/api.php hub/lib.php hub/index.php hub/.htaccess "$SN_WEBROOT/notes/"
+    cp hub/api.php hub/lib.php hub/errlog.php hub/index.php hub/.htaccess "$SN_WEBROOT/notes/"
     cp extension/content.js "$SN_WEBROOT/notes/notes.js"
     rsync -rlptz --exclude=data/ --exclude=secret.php -e "ssh -o BatchMode=yes" "$SN_WEBROOT/notes/" "$SN_SSH:domains/$d/public_html/notes/"
     if curl -fs "https://$d/notes/notes.js" 2>/dev/null | cmp -s - extension/content.js; then echo "$d: live notes.js matches"; else echo "$d: uploaded, live copy not confirmed"; fi

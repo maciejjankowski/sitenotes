@@ -17,7 +17,7 @@ SSH=(ssh -o BatchMode=yes "$HOST")
 
 echo "== $DOMAIN: files into $WEB/notes/"
 mkdir -p "$WEB/notes/data" "$WEB/assets/js"
-cp hub/api.php hub/lib.php hub/index.php hub/.htaccess "$WEB/notes/"
+cp hub/api.php hub/lib.php hub/errlog.php hub/index.php hub/.htaccess "$WEB/notes/"
 cp hub/data/.htaccess "$WEB/notes/data/.htaccess"
 cp extension/content.js "$WEB/notes/notes.js"
 cat > "$WEB/assets/js/annotator.js" <<'JS'

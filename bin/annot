@@ -8,6 +8,8 @@
 #   annot -s SITE accept ID                keep a fix (what MJ does with "Keep" on the green marker)
 #   annot -s SITE revert ID "why"          ask for the before state back (what "Revert" does)
 #   annot move SITE                        copy SITE's notes from the local hub into the site's own hub, then drop them locally
+#   annot errors [SITE] [-n N] [--server|--client]   failed hub calls: refused/failed requests and PHP errors (server)
+#                                          and failures browsers kept and sent later (client); no SITE = every hub
 # SITE = host as in the address bar, with the port if any: example.com, 127.0.0.1:8080
 # Hubs: the local QA hub (.secrets/hub.env) for every site, unless the site has its own /notes/ hub
 # (.secrets/sites/SITE.env, written by install-site.sh). SN_WHO overrides "claude" / "MJ".
@@ -65,5 +67,12 @@ case "$cmd" in
       use_hub; jq -n --argjson id "$old" '{a:"delete", id:$id, who:"move"}' | post >/dev/null
       echo "local #$old -> $site #$new"
     done ;;
-  *) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+  errors)
+    site=; n=30; side=
+    while [ $# -gt 0 ]; do case "$1" in -n) n="$2"; shift ;; --server) side=server ;; --client) side=client ;; *) site="$1" ;; esac; shift; done
+    show() { get -d a=errors -d "n=$n" ${side:+-d side=$side} | jq -r '.[] | "\(.at)  \(.side)  \(.kind)\(if .status then " "+(.status|tostring) else "" end)  \(.a // "-")  \(.detail // .error // "")\(if .side == "client" then "\n    from \(.where // "?") on \(.page // .site // "?") -> \(.hub // "?"): \(.error // "")\(if (.detail // "") != "" then " | "+.detail else "" end)" else "" end)"' || echo "(not reachable)"; }
+    if [ -n "$site" ]; then use_hub "$site"; echo "# $SN_HUB"; show; exit; fi
+    use_hub; echo "# local hub $SN_HUB"; show
+    for f in "$ROOT"/.secrets/sites/*.env; do [ -f "$f" ] || continue; s="$(basename "$f" .env)"; use_hub "$s"; echo "# $s hub $SN_HUB"; show; done ;;
+  *) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac

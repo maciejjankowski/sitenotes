@@ -51,17 +51,47 @@ async function hub(query, body, as = 'json', over = null) {  // over = {hub, key
   c.hub = c.hub.replace(/\/+$/, '');
   const u = new URL(c.hub + '/api.php');
   for (const [k, v] of Object.entries(query || {})) u.searchParams.set(k, v);
-  const r = await fetch(u, {
-    method: body ? 'POST' : 'GET',
-    headers: Object.assign({ 'X-SN-Key': c.key }, body ? { 'Content-Type': 'application/json' } : {}),
-    body: body ? JSON.stringify(Object.assign({ author: c.author }, body)) : undefined,
-  });
+  const what = { hub: c.hub, a: (query && query.a) || (body && body.a) || '', site: (query && query.site) || (body && body.site) || '' };
+  const quiet = body && body.a === 'client_error';   // never log the log
+  const fail = async (msg, extra) => { if (!quiet) await failNote(Object.assign({}, what, extra, { error: msg })); return new Error(msg); };
+  let r;
+  try {
+    r = await fetch(u, {
+      method: body ? 'POST' : 'GET',
+      headers: Object.assign({ 'X-SN-Key': c.key }, body ? { 'Content-Type': 'application/json' } : {}),
+      body: body ? JSON.stringify(Object.assign({ author: c.author }, body)) : undefined,
+    });
+  } catch (e) { throw await fail(`network: ${e.message} (${c.hub})`, { kind: 'network' }); }
   const t = await r.text();
-  if (as === 'text' && r.ok) return t;
+  if (as === 'text' && r.ok) { if (!quiet) failFlush(c); return t; }
   let j;
-  try { j = JSON.parse(t); } catch (e) { throw new Error(`hub ${r.status} at ${c.hub}: ${t.slice(0, 120)}`); }
-  if (!r.ok || j.error) throw new Error(j.error || `hub ${r.status}`);
+  try { j = JSON.parse(t); } catch (e) { throw await fail(`hub ${r.status} at ${c.hub}: ${t.slice(0, 120)}`, { kind: 'parse', status: r.status, detail: t.slice(0, 300) }); }
+  if (!r.ok || j.error) throw await fail(j.error || `hub ${r.status}`, { kind: 'http', status: r.status });
+  if (!quiet) failFlush(c);
   return j;
+}
+
+// ---- failures: every failed hub call is kept here (last 100, shown on the options page) and sent to a hub
+// (a=client_error, stored in its data/errors.jsonl) as soon as any hub call works again ------------------------
+const FAILS = 'fails';
+async function failNote(f) {
+  const s = await chrome.storage.local.get(FAILS);
+  const list = (s[FAILS] || []).concat([Object.assign({ at: new Date().toISOString(), where: 'extension', ver: chrome.runtime.getManifest().version, sent: false }, f)]);
+  await chrome.storage.local.set({ [FAILS]: list.slice(-100) });
+}
+let flushing = false;
+async function failFlush(c) {
+  if (flushing) return; flushing = true;
+  try {
+    const list = (await chrome.storage.local.get(FAILS))[FAILS] || [];
+    const todo = list.filter(f => !f.sent);
+    if (!todo.length) return;
+    await hub(null, { a: 'client_error', errors: todo.map(({ sent, ...f }) => f) }, 'json', { hub: c.hub, key: c.key });
+    const now = (await chrome.storage.local.get(FAILS))[FAILS] || [];
+    const sentAt = new Set(todo.map(f => f.at + f.error));
+    await chrome.storage.local.set({ [FAILS]: now.map(f => sentAt.has(f.at + f.error) ? Object.assign(f, { sent: true, sent_to: c.hub }) : f) });
+  } catch (e) { /* hub gone again; kept for the next call that works */ }
+  finally { flushing = false; }
 }
 
 async function exportSite(site, over) {

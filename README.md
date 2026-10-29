@@ -120,6 +120,7 @@ bin/annot -s SITE reopen ID "why"
 bin/annot -s SITE accept ID                # same as Keep on the green marker
 bin/annot -s SITE revert ID "why"          # same as Revert; shows as REVERT in the export
 bin/annot move SITE                        # local hub -> the site's own hub (screenshots included)
+bin/annot errors [SITE] [-n N] [--server|--client]   # failed hub calls; no SITE = every hub
 ```
 SITE is the host as in the address bar, with the port if any (`example.com`, `127.0.0.1:8080`).
 `annot` picks the site's own hub when `.secrets/sites/SITE.env` exists, else the QA hub.
@@ -133,11 +134,23 @@ while paused; the card shows the question and the button says **Answer**. The an
 note stays open. `annot export` prints `### #ID QUESTION`, then `- answer (time by who): "..."` lines, or `- answer: (none yet)`.
 Close it with `annot -s SITE fix ID "what you did"`.
 
+### Failure log
+Every failed hub call is recorded, on both sides, so "Hub not reachable" can be traced afterwards.
+- **Server** (`hub/errlog.php`, loaded first by `lib.php`): each refused or failed request (4xx/5xx, with the reason the client got),
+  every PHP warning (no longer printed into the JSON) and every crash, one JSON line in `data/errors.jsonl` (rotated at 512 KB to
+  `errors.1.jsonl`). A hub without `secret.php` answers `500 {"error":"hub not configured: secret.php missing"}` instead of a PHP fatal.
+  Never stores the key, the request body or the IP; only whether a key was sent.
+- **Client**: `background.js` keeps every failed call of the extension (hub, action, site, status, kind network/http/parse, the start
+  of a non-JSON answer) in `chrome.storage.local` (last 100, listed on the options page); `notes.js` on a site keeps its own in
+  `localStorage` (`sn_failq`, last 50). Both send them to the hub (`a=client_error`) with the next call that works.
+- **Read**: `bin/annot errors [SITE]`, or `GET api.php?a=errors[&n=100][&side=server|client]` with the key.
+
 ### Fixed notes
 Fixed (done/accepted) notes are not drawn on page load. Menu **Show fixed** / **Hide fixed** toggles the green markers; the choice is kept
 in `localStorage` (`sn_showfixed`). The pill's **n to check** view still lights them up.
 
 ### Test
+`python3 test/errors.py`: failure log, server and client side (throw-away hub copy in the QA docroot).
 ```
 source ~/code/the-template/venv/bin/activate
 python3 test/e2e.py    # extension, 50 checks

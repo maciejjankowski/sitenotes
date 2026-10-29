@@ -14,6 +14,8 @@
 //   POST {a:"delete"|"restore", id, who}               delete is soft; restore undoes it
 //   POST {a:"point", site, path, selector, text, viewport}   phone in Remote mode: the element just tapped
 //   GET  ?a=pointer&site=HOST                                 desktop in Follow mode: last tapped element + seq
+//   POST {a:"client_error", errors:[{at, hub, a, site, page, status, kind, error, detail, ver}]}  failures a client kept while the hub was unreachable
+//   GET  ?a=errors[&n=100][&side=server|client]                  failure log (data/errors.jsonl, errlog.php)
 require __DIR__ . '/lib.php';
 // notes.js on another origin (e.g. a local dev server) may call this hub; the key is still required, no cookies are used.
 if (isset($_SERVER['HTTP_ORIGIN'])) {
@@ -28,6 +30,7 @@ sn_auth();
 $db = sn_db();
 
 function out($v, int $code = 200): never {
+    if ($code >= 400 && is_array($v) && isset($v['error'])) $GLOBALS['sn_err'] = (string)$v['error'];
     http_response_code($code);
     header('Content-Type: application/json; charset=utf-8');
     exit(json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
@@ -38,6 +41,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!is_array($in)) out(['error' => 'bad json'], 400);
     $id = (int)($in['id'] ?? 0);
     $who = (string)($in['who'] ?? $in['author'] ?? '');
+    if (($in['a'] ?? '') === 'client_error') {  // a client sends the failures it kept (extension storage or the page's localStorage)
+        $list = is_array($in['errors'] ?? null) ? array_slice($in['errors'], 0, 50) : [];
+        foreach ($list as $e) {
+            if (!is_array($e)) continue;
+            $row = ['side' => 'client'];
+            foreach (['at', 'hub', 'a', 'site', 'page', 'kind', 'error', 'detail', 'where', 'ver'] as $k) if (isset($e[$k]) && is_scalar($e[$k])) $row[$k === 'at' ? 'client_at' : $k] = (string)$e[$k];
+            if (isset($e['status'])) $row['status'] = (int)$e['status'];
+            sn_log_error($row + ['ua' => (string)($_SERVER['HTTP_USER_AGENT'] ?? '')]);
+        }
+        out(['ok' => true, 'logged' => count($list)]);
+    }
     if (($in['a'] ?? '') === 'point') {
         $site = sn_cut($in['site'] ?? '', 200);
         if ($site === '') out(['error' => 'no site'], 400);
@@ -142,6 +156,8 @@ switch ($a) {
         header('Content-Type: text/markdown; charset=utf-8');
         if (isset($_GET['download'])) header('Content-Disposition: attachment; filename="site-notes_' . preg_replace('/[^\w.-]+/', '_', $site) . '_' . date('Y-m-d') . '.md"');
         exit(sn_export_md($site, $status));
+    case 'errors':
+        out(sn_read_errors((int)($_GET['n'] ?? 100), in_array($_GET['side'] ?? '', ['server', 'client'], true) ? $_GET['side'] : ''));
     case 'pointer':
         if ($site === '') out(['error' => 'site needed'], 400);
         $q = $db->prepare('SELECT * FROM pointer WHERE site = ?');

@@ -266,25 +266,29 @@
     if (msg.type === 'api' || msg.type === 'export') msg = Object.assign({ over: siteHub() }, msg);
     try {
       chrome.runtime.sendMessage(msg, r => {
-        if (chrome.runtime.lastError) return rej(new Error(chrome.runtime.lastError.message));
-        if (r && r.error) return rej(new Error(r.error));
+        if (chrome.runtime.lastError) return rej(Object.assign(new Error(chrome.runtime.lastError.message), { kind: 'extension' }));
+        if (r && r.error) return rej(Object.assign(new Error(r.error), { logged: true }));   // background.js kept it
         res(r);
       });
-    } catch (e) { rej(new Error('extension was reloaded, reload this page')); }
+    } catch (e) { rej(Object.assign(new Error('extension was reloaded, reload this page'), { kind: 'extension' })); }
   });
   async function hubCall(query, body, asText) {
     const u = new URL(HUB + '/api.php');
     for (const [k, v] of Object.entries(query || {})) u.searchParams.set(k, v);
-    const r = await fetch(u, {
-      method: body ? 'POST' : 'GET',
-      headers: Object.assign({ 'X-SN-Key': KEY }, body ? { 'Content-Type': 'application/json' } : {}),
-      body: body ? JSON.stringify(Object.assign({ author: WHO }, body)) : undefined,
-    });
+    const fail = (msg, extra) => Object.assign(new Error(msg), extra);
+    let r;
+    try {
+      r = await fetch(u, {
+        method: body ? 'POST' : 'GET',
+        headers: Object.assign({ 'X-SN-Key': KEY }, body ? { 'Content-Type': 'application/json' } : {}),
+        body: body ? JSON.stringify(Object.assign({ author: WHO }, body)) : undefined,
+      });
+    } catch (e) { throw fail('network: ' + e.message, { kind: 'network' }); }   // offline, DNS, CORS, blocked
     const t = await r.text();
     if (asText && r.ok) return t;
     let j;
-    try { j = JSON.parse(t); } catch (e) { throw new Error('hub ' + r.status); }
-    if (!r.ok || j.error) throw new Error(j.error || 'hub ' + r.status);
+    try { j = JSON.parse(t); } catch (e) { throw fail('hub ' + r.status + ': not JSON', { kind: 'parse', status: r.status, detail: t.slice(0, 300) }); }
+    if (!r.ok || j.error) throw fail(j.error || 'hub ' + r.status, { kind: 'http', status: r.status });
     return j;
   }
   async function pageSend(m) {
@@ -337,7 +341,31 @@
     demoSave(st);
     return { ok: true, id: n ? n.id : 0 };
   }
-  const send = EXT ? extSend : DEMO ? demoSend : pageSend;
+  // ---- failures: kept in this browser and sent to the hub (a=client_error) by the next call that works ----
+  // In the extension, background.js keeps hub failures itself; here only what it could not see (the extension not answering).
+  const FAILQ = 'sn_failq', FAIL_MAX = 50, FAIL_VER = '2026-10-29';
+  const failq = () => { try { return JSON.parse(keep('localStorage', FAILQ) || '[]'); } catch (e) { return []; } };
+  function failNote(m, e) {
+    const q = m.query || {}, b = m.body || {};
+    failq.cache = failq().concat([{ at: new Date().toISOString(), hub: EXT ? ((siteHub() || {}).hub || 'extension hub') : HUB, a: q.a || b.a || m.type,
+      site: q.site || b.site || m.site || location.host, page: location.host + location.pathname, status: e.status || 0, kind: e.kind || 'error',
+      error: String(e.message || e).slice(0, 300), detail: e.detail || '', where: EXT ? 'extension page' : 'notes.js', ver: FAIL_VER }]).slice(-FAIL_MAX);
+    keep('localStorage', FAILQ, JSON.stringify(failq.cache));
+  }
+  let failFlushing = false;
+  async function failFlush(rawSend) {
+    const q = failq(); if (!q.length || failFlushing) return;
+    failFlushing = true;
+    try { await rawSend({ type: 'api', body: { a: 'client_error', errors: q } }); keep('localStorage', FAILQ, JSON.stringify(failq().slice(q.length))); }
+    catch (e) { /* still unreachable; kept for the next try */ }
+    finally { failFlushing = false; }
+  }
+  const rawSend = EXT ? extSend : DEMO ? demoSend : pageSend;
+  const send = DEMO ? rawSend : async m => {
+    const hubbed = m.type === 'api' || m.type === 'export';
+    try { const r = await rawSend(m); if (hubbed) failFlush(rawSend); return r; }
+    catch (e) { if (hubbed && !e.logged && !(m.body && m.body.a === 'client_error')) failNote(m, e); throw e; }
+  };
   const stop = e => { e.preventDefault(); e.stopImmediatePropagation(); };
   const frames = n => new Promise(r => { const f = k => (k ? requestAnimationFrame(() => f(k - 1)) : setTimeout(r, 30)); f(n); });
   const lift = (el, n) => { for (let i = 0; i < n && el.parentElement && el.parentElement !== document.documentElement; i++) el = el.parentElement; return el; };
@@ -998,7 +1026,7 @@
       changed = siteNotes.filter(n => n.path === here && n.status === 'done');
       elsewhere = siteNotes.filter(n => n.path !== here && n.status === 'done').length;
     }
-    catch (e) { siteNotes = []; notes = []; changed = []; elsewhere = 0; toast('Hub not reachable: ' + e.message, true); }
+    catch (e) { siteNotes = []; notes = []; changed = []; elsewhere = 0; toast('Hub not reachable: ' + e.message + ' (logged)', true); }
     if (spot && !changed.length) closeChange();
     drawDots();
     drawHl();  // a hovered element may have gained or lost a note

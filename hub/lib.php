@@ -3,11 +3,19 @@
 // Shared by api.php (extension + bin/annot) and index.php (overview in the browser).
 // SN_KEY lives in secret.php, written by install.sh, never committed.
 date_default_timezone_set('Europe/Warsaw');
-require __DIR__ . '/secret.php';
+require __DIR__ . '/errlog.php';  // first: it also records a hub that cannot start
+if (is_file(__DIR__ . '/secret.php')) require __DIR__ . '/secret.php';
 
 function sn_auth(): void {
     $k = (string)($_SERVER['HTTP_X_SN_KEY'] ?? $_GET['key'] ?? $_COOKIE['sn_key'] ?? '');
-    if (!defined('SN_KEY') || SN_KEY === '' || !hash_equals(SN_KEY, $k)) {
+    if (!defined('SN_KEY') || SN_KEY === '') {  // secret.php missing on the server: say so instead of a PHP fatal
+        $GLOBALS['sn_err'] = 'hub not configured: secret.php missing';
+        http_response_code(500);
+        header('Content-Type: application/json');
+        exit('{"error":"hub not configured: secret.php missing"}');
+    }
+    if (!hash_equals(SN_KEY, $k)) {
+        $GLOBALS['sn_err'] = 'forbidden: wrong or missing key';
         http_response_code(403);
         header('Content-Type: application/json');
         exit('{"error":"forbidden: wrong or missing key"}');
