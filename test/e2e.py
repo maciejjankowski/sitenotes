@@ -164,7 +164,7 @@ with sync_playwright() as p:
     # dots for the 2 notes on this page
     page.wait_for_timeout(500)
     check('two dots on page', sn.locator('.dot').count() == 2, str(sn.locator('.dot').count()))
-    check('pill count', sn.locator('.pill .n').inner_text() == '2 open', sn.locator('.pill .n').inner_text())
+    check('pill count', (sn.locator('.more').click() or sn.locator('.menu .n').inner_text()) == '2 open on this page', sn.locator('.menu .n').inner_text())
     page.screenshot(path=str(OUT / 'dots.png'))
 
     # edit a note from its dot: walk away and back (undo), change text; then move another note by typing a selector
@@ -216,7 +216,7 @@ with sync_playwright() as p:
     # Esc pauses -> link works -> next page comes back in note mode
     page.mouse.move(5, 400)
     page.keyboard.press('Escape')
-    check('Esc pauses', sn.locator('.pill .mode').inner_text() == 'Add note')
+    check('Esc pauses', sn.locator('.pill .mode').inner_text() == 'Comment')
     page.locator('#next').click()
     page.wait_for_url('http://fixture.test/page2')
     page.locator('site-notes .pill').wait_for(state='visible', timeout=5000)

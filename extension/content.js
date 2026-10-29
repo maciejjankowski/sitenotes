@@ -134,9 +134,7 @@
     .tab .tcnt { position: absolute; top: -7px; left: -7px; min-width: 16px; height: 16px; border-radius: 8px; background: #2f6fed; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; padding: 0 4px; }
     .tab .tcnt:empty { display: none; }
     .pill:not(.paused) .mode::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #34c759; margin-right: 6px; }
-    .pill .n { color: #a9adb9; font-size: 12px; padding: 5px 8px; font-weight: 500; }
-    .pill .n:empty { display: none; }
-    .pill .n:hover { color: #fff; }
+
     .hl.remote { border-color: #34c759; background: rgba(52,199,89,.10); }
     .hl.remote i { background: #34c759; }
     .hl.remote.lost { border-style: dashed; }
@@ -167,8 +165,8 @@
     .chg details, .card details { margin-top: 6px; }
     .chg summary, .card summary { cursor: pointer; font-size: 11px; color: #6b7080; user-select: none; }
     .chg details .v { font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: #6b7080; }
-    .pill .chs { color: #7ee2a0; box-shadow: inset 0 0 0 1px rgba(126,226,160,.6); }
-    .pill .chs.on { background: #16a34a; color: #fff; }
+    .menu .chs { color: #7ee2a0; }
+    .menu .chs.on { background: #16a34a; color: #fff; }
     .pill .spotnav button { padding: 5px 8px; }
     .pill .pos { color: #a9adb9; font-size: 12px; padding: 0 2px; }
     .lk { position: fixed; pointer-events: auto; cursor: pointer; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: #2f6fed; color: #fff;
@@ -225,6 +223,8 @@
       </div>
     </div>
     <div class="menu" hidden>
+      <button class="n" hidden title="Open notes on this page: click to step through them"></button>
+      <button class="chs" hidden title="Dim the page and show only what was changed (Alt+Shift+C)"></button>
       <button class="ls" title="All notes and changes of this site, page by page (Alt+Shift+L)">List of all notes</button>
       <button class="hf" hidden title="Fixed notes are hidden by default; show their green markers (the choice is remembered)">Show fixed</button>
       <hr>
@@ -234,7 +234,7 @@
       <button class="ex" title="Copy + download all open notes of this site">Export site for the agent</button>
       <button class="off" title="Remove Site Notes from this tab">Turn off</button>
     </div>
-    <div class="pill"><button class="mode">Add note</button><button class="n" title="Open notes on this page: click to step through them"></button><button class="chs" hidden title="Dim the page and show only what was changed (Alt+Shift+C)"></button><span class="spotnav" hidden><button class="pv" title="Previous change">&#x2039;</button><span class="pos"></span><button class="nx" title="Next change">&#x203A;</button></span><button class="more" title="More">&#x22EF;</button><button class="x" title="Hide to the edge">&#x2715;</button></div>
+    <div class="pill"><button class="mode">Comment</button><span class="spotnav" hidden><button class="pv" title="Previous change">&#x2039;</button><span class="pos"></span><button class="nx" title="Next change">&#x203A;</button></span><button class="more" title="More">&#x22EF;</button><button class="x" title="Hide to the edge">&#x2715;</button></div>
     <div class="tab" title="Site Notes: tap to bring back">&#x270E;<span class="tcnt"></span></div>
     <div class="toast"></div>`;
   const $ = s => root.querySelector(s);
@@ -245,7 +245,7 @@
   const ta = $('.card textarea'), pill = $('.pill'), modeBtn = $('.pill .mode'), rmBtn = $('.rm'), delBtn = $('.del');
   const panes = [...root.querySelectorAll('.pane')];
   const spotSvg = $('.spot'), spotPath = $('.spot path'), rings = $('.spot .rings'), ghosts = $('.ghosts');
-  const chg = $('.chg'), whyIn = $('.chg .why'), chsBtn = $('.pill .chs'), spotNav = $('.pill .spotnav'), posEl = $('.pill .pos');
+  const chg = $('.chg'), whyIn = $('.chg .why'), chsBtn = $('.menu .chs'), spotNav = $('.pill .spotnav'), posEl = $('.pill .pos');
   const linksEl = $('.links'), side = $('.side'), sideList = $('.side .list');
   const remoteBtn = $('.menu .rm-mode'), followBtn = $('.menu .fl'), tab = $('.tab'), menu = $('.menu');
 
@@ -528,7 +528,7 @@
       d.addEventListener('click', () => { if (mode !== 'on') setMode('on'); openCard(el, n, el); });
       dots.append(d);
     }
-    $('.n').textContent = notes.length ? notes.length + ' open' : mode === 'on' && !spot ? 'click anything on the page' : '';  // the hint lives where the eye is
+    $('.n').textContent = notes.length ? notes.length + ' open on this page' : ''; $('.n').hidden = !notes.length;
     tabCount();
     drawChanged();
     drawLinks();
@@ -624,7 +624,7 @@
     }
   }
   let stepI = -1;
-  $('.pill .n').addEventListener('click', () => {
+  $('.menu .n').addEventListener('click', () => { showMenu(false);
     if (!notes.length) { if (mode !== 'on') setMode('on'); return; }
     stepI = (stepI + 1) % notes.length;
     const n = notes[stepI];
@@ -649,7 +649,7 @@
     $('.chg .after').textContent = what || '(no description)';
     const ag = $('.chg .agent'); ag.hidden = !rest.length; ag.open = false; $('.chg .rest').textContent = rest.join('\n');
     whyIn.value = ''; whyIn.hidden = true; $('.chg .why-mic').hidden = true; $('.chg .back').classList.remove('arm'); $('.chg .back').textContent = 'Revert';
-    chg.hidden = false;
+    chg.hidden = false; noZoom();
     const at = locate(n);
     if (at && (at.r.bottom < 0 || at.r.top > innerHeight)) {
       if (at.el) at.el.scrollIntoView({ block: 'center' }); else scrollTo({ top: at.r.top + scrollY - innerHeight / 3 });
@@ -667,7 +667,14 @@
     chg.style.left = left + 'px';
     chg.style.top = Math.max(m, top) + 'px';
   }
-  function closeChange() { chg.hidden = true; chgNote = null; stopDictation(); }
+  function closeChange() { chg.hidden = true; chgNote = null; stopDictation(); noZoom(); }
+  // No double-tap zoom while commenting or with a card open (MJ 10-29: a zoom threw the card and the panel off); pinch zoom stays.
+  let zoomWas = null;
+  function noZoom() {
+    const want = mode === 'on' || !ov.hidden || !chg.hidden, st = document.documentElement.style;
+    if (want && zoomWas === null) { zoomWas = st.touchAction; st.touchAction = 'manipulation'; }
+    else if (!want && zoomWas !== null) { st.touchAction = zoomWas; zoomWas = null; }
+  }
   async function decide(a) {
     const n = chgNote;
     if (!n) return;
@@ -701,7 +708,7 @@
     redraw();
   }
   $('.menu .hf').addEventListener('click', () => { showFixed = !showFixed; keep('localStorage', 'sn_showfixed', showFixed ? '1' : null); if (!showFixed && !spot) closeChange(); redraw(); });
-  chsBtn.addEventListener('click', () => { if (changed.length) setSpot(!spot); else { toggleSide(true); toast('Changes on other pages are listed under their page; tap one to go there'); } });
+  chsBtn.addEventListener('click', () => { showMenu(false); if (changed.length) setSpot(!spot); else { toggleSide(true); toast('Changes on other pages are listed under their page; tap one to go there'); } });
   $('.pill .pv').addEventListener('click', () => spotGo(-1));
   $('.pill .nx').addEventListener('click', () => spotGo(1));
   function place() {
@@ -765,7 +772,7 @@
     rmBtn.textContent = marked ? 'Undo remove' : 'Remove element';
     rmBtn.title = marked ? 'Keep the element: drop this removal note' : 'Note that this element should be removed from the page';
     card.classList.remove('need');
-    ov.hidden = false;
+    ov.hidden = false; noZoom();
     const r = el.getBoundingClientRect();
     if (r.bottom < 0 || r.top > innerHeight) el.scrollIntoView({ block: 'center' });
     pick(sel.i);
@@ -832,7 +839,7 @@
     m1.hidden = false; m1.addEventListener('click', () => dictate(m1, ta));
     m2.addEventListener('click', () => dictate(m2, whyIn));
   }
-  function closeCard() { sel = null; ov.hidden = true; stopDictation(); }
+  function closeCard() { sel = null; ov.hidden = true; stopDictation(); noZoom(); }
   async function save(action) {
     if (!sel) return;
     const { el, note } = sel, comment = ta.value.trim(), typed = selIn.value.trim();
@@ -1070,10 +1077,11 @@
     if (m !== 'on') { spot = false; closeChange(); }
     if (!EXT && m !== 'off') keep('sessionStorage', 'sn_mode', m);  // stays on while moving between pages
     pill.classList.toggle('paused', m === 'paused');
-    modeBtn.textContent = m === 'paused' ? 'Add note' : 'Done';
-    modeBtn.title = m === 'paused' ? 'Click anything on the page and say what should change' : 'Stop adding notes; links and buttons work again';
+    modeBtn.textContent = m === 'paused' ? 'Comment' : 'Done';
+    modeBtn.title = m === 'paused' ? 'Click anything on the page and say what should change' : 'Stop commenting; links and buttons work again';
     if (m !== 'on') showMenu(false);
     if (m !== 'on') { base = null; closeCard(); }
+    noZoom();
     drawHl();
     drawDots();
   }

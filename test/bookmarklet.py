@@ -42,7 +42,7 @@ with sync_playwright() as p:
     pg.locator('site-notes .pill').wait_for(timeout=5000)
     check('bookmarklet injects the pill', True)
     sn = pg.locator('site-notes')
-    sn.locator('.pill .mode').click() if sn.locator('.pill .mode').inner_text() == 'Add note' else None
+    sn.locator('.pill .mode').click() if sn.locator('.pill .mode').inner_text() == 'Comment' else None
     b = pg.locator('.lead').bounding_box(); pg.mouse.click(b['x'] + 10, b['y'] + 5)
     sn.locator('.card').wait_for(state='visible')
     sn.locator('.card textarea').fill('foreign note'); sn.locator('.card textarea').press('Enter')

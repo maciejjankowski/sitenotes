@@ -86,7 +86,7 @@ element. Polling every 0.7 s; Both survive page loads in that tab. Test: `python
 - Numbered dots mark the open notes on the page (blue change, red remove); click one to edit, delete,
   or move it to another element (walk or edit the selector, then Save: new screenshot, history keeps the old selector).
   The pill's **n open** steps through them (a note on an element that is not visible on this layout says so).
-- Pill: **Add note / Done**, **n open**, **✓ n to check**, **⋯** (List of all notes, Hide fixed, Point from this phone, Type for the phone,
+- Pill: **Comment / Done**, **⋯** (n open on this page, ✓ n to check, List of all notes, Hide fixed, Point from this phone, Type for the phone,
   Export site for the agent, Turn off), **✕** = hide into a small tab at the right edge (note mode pauses, the page works; tap the tab to bring it back).
   Export site = every open note of the whole site (all pages), copied to the clipboard and saved as `Downloads/site-notes/<site>_<date>.md`.
 

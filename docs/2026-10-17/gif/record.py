@@ -72,7 +72,7 @@ with sync_playwright() as p:
     page.reload(); sn = page.locator('site-notes'); sn.locator('.pill').wait_for(state='visible', timeout=5000); page.wait_for_timeout(900)
     if sn.locator('.pill .mode').inner_text() == 'Done': sn.locator('.pill .mode').click(); page.wait_for_timeout(200)
     shot(page, 1200)
-    c = mid(sn.locator('.pill .chs').bounding_box()); shot(page, 600, c); sn.locator('.pill .chs').click(); page.wait_for_timeout(300); shot(page, 1400, c)
+    sn.locator('.pill .more').click(); c = mid(sn.locator('.menu .chs').bounding_box()); shot(page, 600, c); sn.locator('.menu .chs').click(); page.wait_for_timeout(300); shot(page, 1400, c)
     for i, action in zip(list(fixes), ['accept', 'revert']):
         d = sn.locator(f'.dot.changed[title^="#{i} "]').first
         c = mid(d.bounding_box()); page.mouse.move(*c); shot(page, 600, c); d.click(); sn.locator('.chg').wait_for(state='visible'); page.wait_for_timeout(200); shot(page, 2000, c)
