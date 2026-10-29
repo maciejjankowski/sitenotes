@@ -92,6 +92,12 @@
     .rm { color: #e5484d; box-shadow: inset 0 0 0 1px #e5484d; }
     .rm.active { background: #e5484d; color: #fff; }
     .del, .cancel { color: #6b7080; font-weight: 500; padding: 5px 6px; }
+    .tawrap { position: relative; }
+    .tawrap textarea { padding-right: 34px; }
+    .mic { position: absolute; right: 4px; top: 4px; width: 26px; height: 26px; padding: 0; border-radius: 6px; font-size: 14px; line-height: 26px; opacity: .6; }
+    .mic:hover { opacity: 1; background: rgba(127,127,127,.14); }
+    .mic.on { opacity: 1; background: #e5484d; color: #fff; animation: snpulse 1s infinite; }
+    @keyframes snpulse { 50% { box-shadow: 0 0 0 4px rgba(229,72,77,.35); } }
     .cancel:hover, .del:hover { background: rgba(127,127,127,.14); }
     .dot { position: fixed; pointer-events: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #2f6fed; color: #fff;
            font-size: 10px; font-weight: 700; line-height: 18px; text-align: center; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
@@ -203,7 +209,7 @@
       <div class="k">Before</div><div class="v before"></div>
       <div class="k">What changed</div><div class="v after"></div>
       <details class="agent" hidden><summary>Details for the agent</summary><div class="v rest"></div></details>
-      <textarea class="why" rows="1" placeholder="Why? (optional, Enter sends)" hidden></textarea>
+      <div class="tawrap"><textarea class="why" rows="1" placeholder="Why? (optional, Enter sends)" hidden></textarea><button class="mic why-mic" hidden title="Dictate">&#x1F399;</button></div>
       <div class="row"><button class="close">Close</button><span class="sp"></span><button class="back" title="Put it back the way it was">Revert</button><button class="keep" title="Keep this change; the marker goes away">Keep</button></div>
     </div>
     <div class="ov" hidden>
@@ -212,7 +218,7 @@
       <div class="card">
         <input class="who" placeholder="Your name (asked once)" hidden>
         <div class="qbox" hidden></div>
-        <textarea rows="2" placeholder="What should change?"></textarea>
+        <div class="tawrap"><textarea rows="2" placeholder="What should change?"></textarea><button class="mic" hidden title="Dictate (click to start, click again to stop)">&#x1F399;</button></div>
         <div class="nav" hidden><button class="w up">&#x2191;</button><button class="w down">&#x2193;</button><div class="crumbs"></div></div>
         <details class="seld"><summary>Selector (Alt+&#x2191; picks the bigger piece around it)</summary><div class="selrow"><input class="sel" spellcheck="false" autocomplete="off" aria-label="CSS selector"><span class="cnt"></span></div></details>
         <div class="row"><button class="cancel" title="Esc">Cancel</button><button class="del" hidden title="Delete this note">Delete note</button><span class="sp"></span><button class="rm">Remove element</button><button class="ok">Save</button></div>
@@ -642,7 +648,7 @@
     $('.chg .before').textContent = n.text || '(no text captured; see the screenshot in the hub)';
     $('.chg .after').textContent = what || '(no description)';
     const ag = $('.chg .agent'); ag.hidden = !rest.length; ag.open = false; $('.chg .rest').textContent = rest.join('\n');
-    whyIn.value = ''; whyIn.hidden = true; $('.chg .back').classList.remove('arm'); $('.chg .back').textContent = 'Revert';
+    whyIn.value = ''; whyIn.hidden = true; $('.chg .why-mic').hidden = true; $('.chg .back').classList.remove('arm'); $('.chg .back').textContent = 'Revert';
     chg.hidden = false;
     const at = locate(n);
     if (at && (at.r.bottom < 0 || at.r.top > innerHeight)) {
@@ -661,7 +667,7 @@
     chg.style.left = left + 'px';
     chg.style.top = Math.max(m, top) + 'px';
   }
-  function closeChange() { chg.hidden = true; chgNote = null; }
+  function closeChange() { chg.hidden = true; chgNote = null; stopDictation(); }
   async function decide(a) {
     const n = chgNote;
     if (!n) return;
@@ -677,7 +683,7 @@
   $('.chg .keep').addEventListener('click', () => decide('accept'));
   $('.chg .back').addEventListener('click', () => {  // first press asks why (optional), second press sends
     const b = $('.chg .back');
-    if (whyIn.hidden) { whyIn.hidden = false; b.classList.add('arm'); b.textContent = 'Revert now'; whyIn.focus(); placeChange(); return; }
+    if (whyIn.hidden) { whyIn.hidden = false; $('.chg .why-mic').hidden = !SR; b.classList.add('arm'); b.textContent = 'Revert now'; whyIn.focus(); placeChange(); return; }
     decide('revert');
   });
   whyIn.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); decide('revert'); } });
@@ -800,7 +806,33 @@
   });
   upBtn.addEventListener('click', () => pick(sel.i - 1));
   downBtn.addEventListener('click', () => pick(sel.i + 1));
-  function closeCard() { sel = null; ov.hidden = true; }
+  // ---- dictation (MJ 2026-10-29: native dictation where available) ----------------
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null, recBtn = null;
+  function dictate(btn, field) {
+    if (rec) { const was = recBtn; stopDictation(); if (was === btn) return; }
+    rec = new SR(); recBtn = btn;
+    rec.lang = document.documentElement.lang || navigator.language || 'pl-PL';
+    rec.continuous = true; rec.interimResults = true;
+    const base = field.value ? field.value.replace(/\s+$/, '') + ' ' : '';
+    let final = '';
+    rec.onresult = e => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) { const t = e.results[i][0].transcript; if (e.results[i].isFinal) final += t + ' '; else interim += t; }
+      field.value = base + final + interim; field.dispatchEvent(new Event('input'));
+    };
+    rec.onend = () => { if (rec) { rec = null; recBtn.classList.remove('on'); recBtn = null; field.focus(); } };
+    rec.onerror = e => { if (e.error !== 'aborted') toast('Dictation: ' + e.error, true); };
+    btn.classList.add('on');
+    try { rec.start(); } catch (e) { rec = null; btn.classList.remove('on'); toast('Dictation not available here', true); }
+  }
+  function stopDictation() { if (!rec) return; const r = rec; rec = null; try { r.stop(); } catch (e) {} if (recBtn) recBtn.classList.remove('on'); recBtn = null; }
+  if (SR) {
+    const m1 = $('.card .mic'), m2 = $('.chg .why-mic');
+    m1.hidden = false; m1.addEventListener('click', () => dictate(m1, ta));
+    m2.addEventListener('click', () => dictate(m2, whyIn));
+  }
+  function closeCard() { sel = null; ov.hidden = true; stopDictation(); }
   async function save(action) {
     if (!sel) return;
     const { el, note } = sel, comment = ta.value.trim(), typed = selIn.value.trim();
