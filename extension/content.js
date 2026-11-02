@@ -1085,11 +1085,22 @@
     drawHl();
     drawDots();
   }
+  // A modal <dialog> (showModal) makes the rest of the page inert and sits in the top layer: the notes UI must live inside
+  // the topmost open modal, or it can be neither seen nor clicked (MJ 2026-11-02). It goes back to <html> when the modal closes.
+  let homeObs = null;
+  function hostHome() {
+    if (mode === 'off') return;
+    const modals = [...document.querySelectorAll('dialog[open]')].filter(d => { try { return d.matches(':modal'); } catch (e) { return false; } });
+    const home = modals.length ? modals[modals.length - 1] : document.documentElement;
+    if (host.parentNode !== home) { home.append(host); redraw(); }
+  }
   function start() {
     if (mode !== 'off') return;
     host.dataset.by = EXT ? 'ext' : 'page';
     if (EXT) document.documentElement.setAttribute('data-site-notes', 'ext');  // tells a site's own notes.js to step aside
     document.documentElement.append(host);
+    homeObs = new MutationObserver(() => hostHome()); homeObs.observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['open'] });
+    addEventListener('close', hostHome, true);
     addEventListener('mousemove', onMove, true);
     PRESS.forEach(t => addEventListener(t, onPress, { capture: true, passive: false }));
     KEYS.forEach(t => addEventListener(t, onKey, true));
@@ -1097,6 +1108,7 @@
     addEventListener('resize', redraw);
     poll = setInterval(() => { if (location.href !== href) { closeCard(); closeChange(); spotI = 0; loadNotes(); } }, 1000);  // single-page apps
     setMode(EXT || keep('sessionStorage', 'sn_mode') === 'on' ? 'on' : 'paused');
+    hostHome();   // a modal may already be open
     side.hidden = !keep('sessionStorage', 'sn_side');  // the List stays open while walking through pages
     if (keep('sessionStorage', 'sn_tucked')) tuck(true);
     if (keep('sessionStorage', 'sn_remote')) setRemote(true);
@@ -1117,6 +1129,7 @@
     removeEventListener('resize', redraw);
     clearInterval(poll);
     clearInterval(follow); follow = 0;
+    if (homeObs) { homeObs.disconnect(); homeObs = null; } removeEventListener('close', hostHome, true);
     host.remove();
     if (EXT && document.documentElement.getAttribute('data-site-notes') === 'ext') document.documentElement.removeAttribute('data-site-notes');
   }
