@@ -16,8 +16,9 @@ PAGE = """<!doctype html><html><head><meta charset=utf-8><title>Dialog</title>
 <script src="/annot/notes.js" data-site-notes defer></script>
 <style>body{font:16px system-ui;margin:0} section{padding:40px 16px} dialog{width:min(560px,100vw);height:80vh;border:0}</style></head>
 <body><section><h1>Page under the window</h1><button id="open">Open</button></section>
-<dialog id="win"><h2 id="wintitle">Krok po kroku</h2><p id="inside">Stan: 3 zły</p><button id="shut">Close</button></dialog>
-<script>document.getElementById('open').onclick = () => document.getElementById('win').showModal(); document.getElementById('shut').onclick = () => document.getElementById('win').close();</script>
+<dialog id="top"><p id="topinside">Okno na wierzchu</p><button id="topshut">Close</button></dialog>
+<dialog id="win"><h2 id="wintitle">Krok po kroku</h2><p id="inside">Stan: 3 zły</p><button id="shut">Close</button><button id="more">More</button></dialog>
+<script>document.getElementById('open').onclick = () => document.getElementById('win').showModal(); document.getElementById('shut').onclick = () => document.getElementById('win').close(); document.getElementById('more').onclick = () => document.getElementById('top').showModal();</script>
 </body></html>"""
 
 def purge():
@@ -56,6 +57,12 @@ with sync_playwright() as p:
     n = notes()
     check('the note is saved on the element inside the window', len(n) == 1 and 'inside' in (n[0]['selector'] or ''), n and n[0]['selector'])
     check('the window stayed open while noting', page.evaluate("document.getElementById('win').open"))
+    page.evaluate("document.getElementById('top').showModal()"); page.wait_for_timeout(300)   # in comment mode a click would make a note, not press the button
+    where = page.evaluate("document.querySelector('site-notes').parentElement.id")
+    check('a second window opened on top (earlier in the page) takes the notes UI', where == 'top', where)
+    page.evaluate("document.getElementById('top').close()"); page.wait_for_timeout(300)
+    where = page.evaluate("document.querySelector('site-notes').parentElement.id")
+    check('closing it returns the notes UI to the window below', where == 'win', where)
     page.evaluate("document.getElementById('win').close()"); page.wait_for_timeout(300)
     where = page.evaluate("document.querySelector('site-notes').parentElement.tagName")
     check('closing the window brings the notes UI back to the page', where == 'HTML', where)

@@ -1087,11 +1087,13 @@
   }
   // A modal <dialog> (showModal) makes the rest of the page inert and sits in the top layer: the notes UI must live inside
   // the topmost open modal, or it can be neither seen nor clicked (MJ 2026-11-02). It goes back to <html> when the modal closes.
-  let homeObs = null;
+  let homeObs = null, opened = [];   // modals in the order they opened: the last one is on top, whatever its place in the page
+  const isModal = d => { try { return d.open && d.matches(':modal'); } catch (e) { return false; } };
   function hostHome() {
     if (mode === 'off') return;
-    const modals = [...document.querySelectorAll('dialog[open]')].filter(d => { try { return d.matches(':modal'); } catch (e) { return false; } });
-    const home = modals.length ? modals[modals.length - 1] : document.documentElement;
+    opened = opened.filter(isModal);
+    for (const d of document.querySelectorAll('dialog[open]')) if (isModal(d) && !opened.includes(d)) opened.push(d);
+    const home = opened.length ? opened[opened.length - 1] : document.documentElement;
     if (host.parentNode !== home) { home.append(host); redraw(); }
   }
   function start() {
