@@ -456,11 +456,12 @@
   // Where a changed note's element is now: by selector, then by its source block (data-src), else the stored position
   // (the element was removed or hidden by the fix) - drawn as a dashed ghost.
   function locate(n) {
-    const seen = el => { if (!el) return null; const r = el.getBoundingClientRect(); return r.width || r.height ? { el, r } : null; };
+    const seen = el => { if (!el) return null; const r = el.getBoundingClientRect(); return onScreen(el, r) ? { el, r } : null; };  // hidden slide = not here
     let hit = null;
     try { hit = seen(n.selector ? document.querySelector(n.selector) : null); } catch (e) {}
     if (!hit && n.source) hit = seen([...document.querySelectorAll('[data-src]')].find(e => e.dataset.src === n.source));
     if (hit) return Object.assign(hit, { gone: false });
+    try { if (n.selector && document.querySelector(n.selector)) return null; } catch (e) {}  // exists but hidden (another slide): nothing to draw here
     const [x, y, w, h] = String(n.rect || '').split(',').map(Number);
     if (!(w || h)) return null;
     return { el: null, r: { left: x - scrollX, top: y - scrollY, width: w, height: h, right: x - scrollX + w, bottom: y - scrollY + h }, gone: true };
@@ -526,6 +527,15 @@
     spotNav.hidden = !spot || !changed.length;
     posEl.textContent = changed.length ? `${spotI + 1}/${changed.length}` : '';
   }
+  // Really on screen: has a box, not hidden by visibility/opacity, and nothing else covers its centre
+  // (slide decks keep every slide in the DOM; a note on slide 7 must not show on slide 2).
+  function onScreen(el, r) {
+    if (!(r.width || r.height) || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) return false;
+    try { if (el.checkVisibility && !el.checkVisibility({ visibilityProperty: true, opacityProperty: true })) return false; } catch (e) {}
+    const cx = Math.min(innerWidth - 1, Math.max(0, r.left + r.width / 2)), cy = Math.min(innerHeight - 1, Math.max(0, r.top + Math.min(r.height / 2, 40)));
+    const top = document.elementFromPoint(cx, cy);
+    return !top || top === el || el.contains(top) || top.contains(el);
+  }
   function drawDots() {
     dots.textContent = '';
     if (mode !== 'off' && !spot) for (const n of notes) {
@@ -534,7 +544,7 @@
       try { el = n.selector ? document.querySelector(n.selector) : null; } catch (e) {}
       if (!el) continue;
       const r = el.getBoundingClientRect();
-      if (r.bottom < 0 || r.top > innerHeight || (!r.width && !r.height)) continue;
+      if (!onScreen(el, r)) continue;
       const d = document.createElement('div');
       d.className = 'dot' + (n.action === 'remove' ? ' remove' : n.action === 'question' ? ' question' : '');
       d.textContent = n.id;
