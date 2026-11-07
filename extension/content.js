@@ -145,6 +145,9 @@
     .toast.act { pointer-events: auto; }
     .toast button { margin-left: 12px; padding: 0; color: #8fb3ff; font-weight: 700; text-decoration: underline; }
     .dot.changed { background: #16a34a; font-size: 12px; }
+    .lbl { position: fixed; pointer-events: auto; max-width: 280px; padding: 5px 8px; border-radius: 7px; background: #fffbe6; color: #15171c; font-size: 12px; line-height: 1.3;
+           box-shadow: 0 2px 8px rgba(0,0,0,.25), 0 0 0 1px rgba(0,0,0,.08); cursor: pointer; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+    .lbl b { color: #2f6fed; margin-right: 4px; } .lbl.remove b { color: #e5484d; } .lbl.changed { background: #ecfdf3; } .lbl.changed b { color: #16a34a; } .lbl.question b { color: #e5484d; }
     .dot.changed.gone { background: #fff; color: #16a34a; box-shadow: inset 0 0 0 2px #16a34a; }
     .dot.revert { background: #c2410c; }
     .ghost { position: fixed; pointer-events: none; border: 2px dashed #16a34a; border-radius: 4px; background: rgba(22,163,74,.06); }
@@ -226,6 +229,7 @@
       <button class="n" hidden title="Open notes on this page: click to step through them"></button>
       <button class="chs" hidden title="Dim the page and show only what was changed (Alt+Shift+C)"></button>
       <button class="ls" title="All notes and changes of this site, page by page (Alt+Shift+L)">List of all notes</button>
+      <button class="sa" title="Every note's text on this page at once, open and fixed; for reading, nothing to click first (Alt+Shift+A)">Show all notes</button>
       <button class="hf" hidden title="Fixed notes are hidden by default; show their green markers (the choice is remembered)">Show fixed</button>
       <hr>
       <button class="rm-mode" title="Each element you tap here opens on the computer that types for the phone">Point from this phone</button>
@@ -477,12 +481,24 @@
     }
     spotPath.setAttribute('d', d);
   }
+  let showAll = !!keep('sessionStorage', 'sn_showall');  // every note's text on the page at once, for someone who only reads
+  function label(n, r, kind, onClick) {
+    const l = document.createElement('div');
+    l.className = 'lbl ' + kind;
+    l.append(Object.assign(document.createElement('b'), { textContent: (kind === 'changed' ? '✓' : kind === 'question' ? '?' : '#') + n.id }));
+    l.append(document.createTextNode((n.action === 'remove' ? 'REMOVE ' : '') + (n.comment || '')));
+    l.title = n.comment;
+    l.style.left = Math.min(Math.max(2, r.left + 12), innerWidth - 290) + 'px';
+    l.style.top = Math.max(2, r.top + 10) + 'px';
+    l.addEventListener('click', onClick);
+    dots.append(l);
+  }
   let showFixed = keep('localStorage', 'sn_showfixed') === '1';  // fixed notes stay hidden until asked for (remembered in this browser)
   function drawChanged() {
     ghosts.textContent = '';
     const spots = [];
     const hf = $('.menu .hf'); hf.hidden = !changed.length; hf.classList.toggle('on', showFixed); hf.textContent = showFixed ? 'Hide fixed' : 'Show fixed';
-    if (mode !== 'off' && (showFixed || spot)) for (const n of changed) {  // also while paused: links work, the green markers still click
+    if (mode !== 'off' && (showFixed || spot || showAll)) for (const n of changed) {  // also while paused: links work, the green markers still click
       const at = locate(n);
       if (!at) continue;
       spots.push(at);
@@ -496,6 +512,7 @@
       d.style.top = Math.max(2, r.top - 9) + 'px';
       d.addEventListener('click', () => openChange(n));
       dots.append(d);
+      if (showAll) label(n, r, 'changed', () => openChange(n));
     }
     drawSpot(spots);
     const all = changed.length + elsewhere;
@@ -512,7 +529,7 @@
   function drawDots() {
     dots.textContent = '';
     if (mode !== 'off' && !spot) for (const n of notes) {
-      if (mode !== 'on' && n.action !== 'question') continue;  // questions from the agent show while paused too
+      if (mode !== 'on' && n.action !== 'question' && !showAll) continue;  // questions from the agent show while paused too; Show all shows everything
       let el = null;
       try { el = n.selector ? document.querySelector(n.selector) : null; } catch (e) {}
       if (!el) continue;
@@ -527,6 +544,7 @@
       if (n.revert) { d.className = 'dot revert'; d.title = 'REVERT requested: ' + n.comment; }
       d.addEventListener('click', () => { if (mode !== 'on') setMode('on'); openCard(el, n, el); });
       dots.append(d);
+      if (showAll) label(n, r, n.action === 'remove' ? 'remove' : n.action === 'question' ? 'question' : '', () => { if (mode !== 'on') setMode('on'); openCard(el, n, el); });
     }
     $('.n').textContent = notes.length ? notes.length + ' open on this page' : ''; $('.n').hidden = !notes.length;
     tabCount();
@@ -609,19 +627,23 @@
     if (u.pathname === location.pathname && u.search === location.search) location.hash = u.hash;  // single-page app route
     else location.href = u.href;
   }
-  function openPending() {
+  let pendT = 0;
+  function openPending(tries) {
     const id = Number(keep('sessionStorage', 'sn_open'));
     if (!id) return;
-    keep('sessionStorage', 'sn_open', null);
     const c = changed.find(n => n.id === id), o = notes.find(n => n.id === id);
-    if (c) { if (mode !== 'on') setMode('on'); openChange(c); return; }
-    if (o) {
-      let el = null;
-      try { el = o.selector ? document.querySelector(o.selector) : null; } catch (e) {}
-      if (!el) { toast(`#${id}: its element is not on this page any more`, true); return; }
-      if (mode !== 'on') setMode('on');
-      openCard(el, o, el);
+    if (!c && !o) { if (siteNotes.length) { keep('sessionStorage', 'sn_open', null); toast(`#${id} is not on this page`, true); } return; }  // notes not loaded yet: the next loadNotes retries
+    if (c) { keep('sessionStorage', 'sn_open', null); if (mode !== 'on') setMode('on'); openChange(c); return; }
+    let el = null;
+    try { el = o.selector ? document.querySelector(o.selector) : null; } catch (e) {}
+    if (!el) {  // the page may still be building itself (apps render from data after load): retry for ~6 s
+      tries = tries || 0;
+      if (tries < 20) { clearTimeout(pendT); pendT = setTimeout(() => openPending(tries + 1), 300); return; }
+      keep('sessionStorage', 'sn_open', null); toast(`#${id}: its element is not on this page any more`, true); return;
     }
+    keep('sessionStorage', 'sn_open', null);
+    if (mode !== 'on') setMode('on');
+    openCard(el, o, el);
   }
   let stepI = -1;
   $('.menu .n').addEventListener('click', () => { showMenu(false);
@@ -707,6 +729,8 @@
     openChange(changed[spotI]);
     redraw();
   }
+  function setShowAll(on) { showAll = on; keep('sessionStorage', 'sn_showall', on ? '1' : null); $('.menu .sa').textContent = on ? 'Hide note texts' : 'Show all notes'; $('.menu .sa').classList.toggle('on', on); redraw(); }
+  $('.menu .sa').addEventListener('click', () => { showMenu(false); setShowAll(!showAll); });
   $('.menu .hf').addEventListener('click', () => { showFixed = !showFixed; keep('localStorage', 'sn_showfixed', showFixed ? '1' : null); if (!showFixed && !spot) closeChange(); redraw(); });
   chsBtn.addEventListener('click', () => { showMenu(false); if (changed.length) setSpot(!spot); else { toggleSide(true); toast('Changes on other pages are listed under their page; tap one to go there'); } });
   $('.pill .pv').addEventListener('click', () => spotGo(-1));
@@ -1027,6 +1051,7 @@
     if (mode === 'off') return;
     if (e.type === 'keydown' && e.altKey && e.shiftKey && e.code === 'KeyC' && !sel) { stop(e); setSpot(!spot); return; }
     if (e.type === 'keydown' && e.altKey && e.shiftKey && e.code === 'KeyL' && !sel) { stop(e); toggleSide(); return; }
+    if (e.type === 'keydown' && e.altKey && e.shiftKey && e.code === 'KeyA' && !sel) { stop(e); setShowAll(!showAll); return; }
     if (spot && e.type === 'keydown' && !sel && e.composedPath()[0] !== whyIn) {
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { stop(e); spotGo(e.key === 'ArrowRight' ? 1 : -1); return; }
       if (e.key === 'Escape') { stop(e); setSpot(false); return; }
@@ -1113,6 +1138,7 @@
     hostHome();   // a modal may already be open
     side.hidden = !keep('sessionStorage', 'sn_side');  // the List stays open while walking through pages
     if (keep('sessionStorage', 'sn_tucked')) tuck(true);
+    if (showAll) setShowAll(true);
     if (keep('sessionStorage', 'sn_remote')) setRemote(true);
     if (keep('sessionStorage', 'sn_follow')) {
       const s = keep('sessionStorage', 'sn_follow_seq'); keep('sessionStorage', 'sn_follow_seq', null);
